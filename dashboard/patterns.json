@@ -1,0 +1,46 @@
+[
+ {
+  "id": "red_drop",
+  "level": "crit",
+  "name": {"vi": "Hấp thụ đỏ tăng mạnh (nhóm trứng 29 / 30)", "en": "Strong red absorption (eggs 29 / 30 group)"},
+  "refs": ["0029", "0030"],
+  "rule": {"kind": "red_drop", "last": 2, "z": -3, "min_hits": 3, "z_strong": -6},
+  "signs": {
+   "vi": [
+    "Tỉ lệ đỏ/NIR = S(665–700 nm) / S(740–865 nm) thấp hơn đàn ở cả đầu tù và đầu nhọn, trong 2 batch cuối liên tiếp (robust z ≤ −3 ở ít nhất 3/4 phép đo, có ít nhất một lần ≤ −6). Trong đàn 31 trứng chỉ 29 và 30 thoả cả 4/4 ở B08–B09.",
+    "Vùng đỏ sâu 610–665 nm bị hấp thụ mạnh nhất: trứng 29 ở B09 thấp hơn đàn khoảng 2,7 log10 ở đầu nhọn, nhiều pixel ADC về 0. Vùng NIR 740–900 nm không giảm theo, thậm chí sáng hơn đàn.",
+    "Batch đầu tiên xuất hiện dấu hiệu (B08, 113 h), trứng sáng NIR hơn đàn (29: đầu nhọn z = +2,5; 30: đầu tù z = +3,0).",
+    "Hai biến thể: ĐỘT NGỘT, bình thường tới batch trước rồi tụt (29: không lệch tới B07, B08 z ≈ −3, B09 z −19 / −12); TỪ TỪ, đỏ/NIR thấp dần nhiều batch (30: từ B06 z ≈ −7 / −5, B09 −13 / −5; vỏ sáng, ảnh thấy rõ bóng phôi).",
+    "Không nhầm với phổ \"jump\": jump làm sáng đều mọi bước sóng (NIR z ≥ +4) nhưng tỉ lệ đỏ/NIR gần như không đổi (0005, 0009, 0018 ở B08).",
+    "Kết cục đã biết: trứng 29 không nở (19/10/2026, vỏ nứt, dịch nâu sẫm, nghi exploder do nhiễm khuẩn). Trứng 30: chưa có kết quả, cần soi lại và ngửi mùi."
+   ],
+   "en": [
+    "Red/NIR ratio = S(665–700 nm) / S(740–865 nm) lower than the flock at both the blunt and pointed ends in the last 2 consecutive batches (robust z ≤ −3 in at least 3 of 4 measurements, at least once ≤ −6). In the 31-egg flock only 29 and 30 meet all 4/4 at B08–B09.",
+    "The deep-red band 610–665 nm is absorbed most: egg 29 at B09 is about 2.7 log10 below the flock at the pointed end, with many ADC pixels at 0. The NIR band 740–900 nm does not drop and is even brighter than the flock.",
+    "In the first batch showing the sign (B08, 113 h) the egg is NIR-brighter than the flock (29: pointed z = +2.5; 30: blunt z = +3.0).",
+    "Two variants: ABRUPT, normal until the previous batch then dropping (29: no deviation up to B07, B08 z ≈ −3, B09 z −19 / −12); GRADUAL, red/NIR falling over several batches (30: from B06 z ≈ −7 / −5, B09 −13 / −5; light shell, embryo shadow clearly visible in the photo).",
+    "Not to be confused with a \"jump\" spectrum: a jump brightens all wavelengths evenly (NIR z ≥ +4) while red/NIR barely changes (0005, 0009, 0018 at B08).",
+    "Known outcome: egg 29 failed to hatch (19/10/2026, cracked shell, dark brown leakage, suspected bacterial exploder). Egg 30: no outcome yet, candle and smell it."
+   ]
+  }
+ },
+ {
+  "id": "jump",
+  "level": "info",
+  "name": {"vi": "Phổ \"jump\" (lỗi đo, không phải sinh học)", "en": "\"Jump\" spectrum (measurement artifact, not biology)"},
+  "refs": ["0005", "0009", "0018"],
+  "rule": {"kind": "jump", "z_rel": 4, "z_rn_abs": 3},
+  "signs": {
+   "vi": [
+    "Độ sáng NIR 740–865 nm cao vọt so với đàn (robust z ≥ +4), counts tăng 4–8 lần, đều ở mọi bước sóng.",
+    "Tỉ lệ đỏ/NIR gần như không đổi (|z| < 3), tức hình dạng phổ không đổi, chỉ dịch lên.",
+    "Thường không lặp lại ở batch sau; trùng với ghi chú \"phổ bị nhiễu\" của người đo (B08: 0005, 0009, 0018). Nên đo lại thay vì kết luận."
+   ],
+   "en": [
+    "NIR 740–865 nm brightness jumps relative to the flock (robust z ≥ +4), counts 4–8× higher, evenly across wavelengths.",
+    "Red/NIR ratio barely changes (|z| < 3): the spectral shape stays the same, it only shifts up.",
+    "Usually does not repeat in the next batch; matches the operator note \"noisy spectrum\" (B08: 0005, 0009, 0018). Re-measure instead of drawing conclusions."
+   ]
+  }
+ }
+]

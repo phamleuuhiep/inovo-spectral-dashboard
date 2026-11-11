@@ -1,0 +1,2169 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In-ovo Batch Dashboard</title>
+<script src="/plotly.min.js"></script>
+<script src="/static/i18n_data.js"></script>
+<script src="/static/i18n.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --surface-2: #f3f2ef;
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781; --st-hdead: #6250d6;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --accent: #2a78d6; --s-blunt: #2a78d6; --s-pointed: #eb6834; --s-lamp: #898781;
+  --good: #0ca30c; --warning: #fab219; --serious: #eb6834; --critical: #d03b3b;
+  --div-neg: #2a78d6; --div-mid: #f0efec; --div-pos: #e34948;
+  --ramp: #86b6ef,#6da7ec,#5598e7,#3987e5,#2a78d6,#256abf,#1c5cab,#184f95,#104281,#0d366b;
+  --seq: #f3f2ef,#cde2fb,#9ec5f4,#6da7ec,#3987e5,#256abf,#184f95,#0d366b;
+  --cat: #2a78d6,#eb6834,#1baf7a,#eda100,#e87ba4,#008300,#6250d6,#e34948;
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+:root:lang(zh-Hans) { --font: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif; }
+:root:lang(zh-Hant) { --font: system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans CJK TC", sans-serif; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+    --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781; --st-hdead: #9085e9;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --accent: #3987e5; --s-blunt: #3987e5; --s-pointed: #d95926;
+    --div-neg: #3987e5; --div-mid: #383835; --div-pos: #e66767;
+    --ramp: #184f95,#1c5cab,#256abf,#2a78d6,#3987e5,#5598e7,#6da7ec,#86b6ef,#b7d3f6,#cde2fb;
+    --seq: #232321,#104281,#184f95,#256abf,#3987e5,#6da7ec,#9ec5f4,#cde2fb;
+    --cat: #3987e5,#d95926,#199e70,#c98500,#d55181,#008300,#9085e9,#e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+  --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781; --st-hdead: #9085e9;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --accent: #3987e5; --s-blunt: #3987e5; --s-pointed: #d95926;
+  --div-neg: #3987e5; --div-mid: #383835; --div-pos: #e66767;
+  --ramp: #184f95,#1c5cab,#256abf,#2a78d6,#3987e5,#5598e7,#6da7ec,#86b6ef,#b7d3f6,#cde2fb;
+  --seq: #232321,#104281,#184f95,#256abf,#3987e5,#6da7ec,#9ec5f4,#cde2fb;
+  --cat: #3987e5,#d95926,#199e70,#c98500,#d55181,#008300,#9085e9,#e66767;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--page); color: var(--ink);
+  font: 14px/1.45 var(--font); }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- controls ---------- */
+.ic { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ic.lg { width: 28px; height: 28px; stroke-width: 1.5; }
+.muted { color: var(--muted); }
+.small { font-size: 12.5px; }
+select, input[type=number], input[type=text] { background: var(--surface); border: 1px solid var(--axis); border-radius: 8px;
+  padding: 0 10px; height: 32px; outline: none; transition: border-color .15s, box-shadow .15s; }
+select:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--axis); font-size: 13.5px; font-weight: 500; white-space: nowrap; }
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn .ic { width: 16px; height: 16px; }
+.icon-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--axis);
+  background: var(--surface); color: var(--ink-2); padding: 0; }
+.icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+.icon-btn.ghost { border-color: transparent; background: transparent; }
+.seg { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; height: 32px; }
+.seg button { border: 0; background: var(--surface); padding: 0 12px; border-right: 1px solid var(--axis); font-size: 13.5px; }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--accent); color: #fff; }
+.spacer { flex: 1; }
+
+/* ---------- header ---------- */
+header { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px 12px; padding: 10px 20px; background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; margin-right: 8px; letter-spacing: -0.01em; }
+.logo { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+.logo .ic { width: 16px; height: 16px; stroke-width: 2; }
+.srcpick { display: flex; align-items: center; gap: 2px; }
+.srcpick select { min-width: 220px; max-width: 340px; font-weight: 500; }
+.ctl { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13.5px; }
+.ctl input[type=number] { width: 66px; }
+.live { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; margin-right: 4px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.dot.on { background: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 20%, transparent); }
+
+/* ---------- layout ---------- */
+.wrap { padding: 16px; display: grid; gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.card h2 { font-size: 14px; margin: 0 0 10px; font-weight: 650; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.card h2 .sub { font-weight: 400; color: var(--muted); font-size: 13px; }
+.main { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+.two { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
+@media (max-width: 1200px) { .two { grid-template-columns: 1fr; } }
+.stack { display: grid; gap: 16px; min-width: 0; }
+
+/* ---------- timeline ---------- */
+.timeline { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.bcard { flex: 0 0 auto; min-width: 168px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+  background: var(--surface); font-size: 12.5px; color: var(--ink-2); position: relative; }
+.bcard .t { font-weight: 650; color: var(--ink); font-size: 13.5px; display: flex; align-items: center; gap: 6px; }
+.bcard .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.bcard .age { color: var(--ink); font-weight: 600; }
+.bcard .new { position: absolute; top: 6px; right: 8px; font-size: 11px; color: var(--good); font-weight: 650; }
+.warn { color: var(--critical); }
+.lamp-chart { height: 150px; margin-top: 8px; }
+a.link { color: var(--accent); cursor: pointer; text-decoration: underline; }
+
+/* ---------- egg list ---------- */
+aside.card { position: sticky; top: 64px; max-height: calc(100vh - 80px); display: flex; flex-direction: column; padding: 12px; }
+.egg-filter { margin-bottom: 8px; width: 100%; }
+.egg-list { overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-right: 2px; }
+.egg { border: 1px solid var(--border); border-radius: 8px; padding: 4px; background: var(--surface); text-align: left; }
+.egg:hover { border-color: var(--axis); }
+.egg.on { outline: 2px solid var(--accent); outline-offset: -1px; }
+.egg img, .egg .noimg { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 5px; display: block; background: var(--surface-2); }
+.egg .noimg { display: grid; place-items: center; color: var(--muted); font-size: 11px; }
+.egg .lab { font-weight: 650; font-size: 13px; margin-top: 3px; display: flex; justify-content: space-between; }
+.egg .meta { font-size: 11px; color: var(--muted); }
+
+/* ---------- egg detail ---------- */
+.egg-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.egg-head .big { font-size: 22px; font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.chip b { color: var(--ink); font-weight: 600; }
+.chip.x { cursor: pointer; }
+.plot { width: 100%; height: 380px; }
+.plot.sm { height: 300px; }
+.plot.heat { height: 560px; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.shot { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); padding: 0; text-align: left; }
+.shot img, .shot .noimg { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: var(--surface-2); }
+.shot .noimg { display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+.shot .cap { padding: 6px 8px; font-size: 12px; color: var(--ink-2); }
+.shot .cap b { color: var(--ink); }
+.shot .bar { height: 3px; }
+
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { padding: 5px 8px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
+td:nth-child(-n+3), th:nth-child(-n+3) { text-align: left; }
+.tbl-wrap { overflow: auto; max-height: 420px; }
+.flag { color: var(--critical); font-weight: 600; }
+
+/* ---------- modal / lightbox ---------- */
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.45); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; padding: 16px; }
+.modal.open { display: flex; }
+.dialog { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; width: min(560px, 100%); max-height: 88vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.dialog h3 { margin: 0 0 12px; }
+.dialog .row { display: flex; gap: 10px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+.dialog pre { white-space: pre-wrap; background: var(--surface-2); padding: 10px; border-radius: 8px; font-size: 12px; max-height: 220px; overflow: auto; margin: 8px 0 0; }
+.progress { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; margin-top: 14px; }
+.progress > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.lb { background: rgba(0,0,0,0.92); flex-direction: column; gap: 10px; }
+.lb .imgs { display: flex; gap: 10px; flex: 1; min-height: 0; width: 100%; justify-content: center; }
+.lb figure { margin: 0; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.lb .frame { flex: 1; min-height: 0; width: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.lb img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; transition: transform .15s; }
+.lb img.zoom { cursor: zoom-out; transform: scale(2.5); }
+.lb figcaption { color: #f0efec; font-size: 13px; }
+.lb .bar { display: flex; gap: 10px; align-items: center; color: #f0efec; flex-wrap: wrap; justify-content: center; }
+.lb .bar .btn { background: #232321; color: #f0efec; border-color: #383835; }
+.lb select { background: #232321; color: #f0efec; border-color: #383835; }
+.toast { position: fixed; bottom: 16px; right: 16px; z-index: 60; background: var(--ink); color: var(--page); padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.empty { color: var(--muted); padding: 30px; text-align: center; }
+[hidden] { display: none !important; }
+
+/* ---------- start screen ---------- */
+#start { max-width: 760px; margin: 0 auto; padding: 12vh 20px 48px; }
+#start h2 { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; margin: 0 0 6px; }
+#start .lede { margin: 0 0 24px; color: var(--ink-2); }
+.back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--ink-2); padding: 0; margin-bottom: 20px; font-size: 13.5px; }
+.back:hover { color: var(--accent); }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .tiles { grid-template-columns: 1fr; } }
+.tile { display: flex; align-items: center; gap: 14px; text-align: left; padding: 18px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface); transition: border-color .15s, box-shadow .15s, transform .15s; }
+.tile:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(0,0,0,.06); transform: translateY(-1px); }
+.tile-ic { width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center; flex: none;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.tile-ic .ic { width: 22px; height: 22px; }
+.tile-t { display: block; font-weight: 600; font-size: 15px; }
+.tile-d { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.tile .chev { margin-left: auto; color: var(--muted); }
+#recentCard { margin-top: 36px; }
+.label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; }
+.list { display: grid; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.list:empty { display: none; }
+.list > * { min-width: 0; }
+.row-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 0; border-top: 1px solid var(--border);
+  background: none; text-align: left; width: 100%; font-size: 13.5px; }
+.row-item:first-child { border-top: 0; }
+.row-item:hover { background: var(--surface-2); }
+.row-item .ic { color: var(--muted); }
+.row-item .grow { flex: 1; min-width: 0; }
+.row-item .t { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-item .d { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-item .r { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.badge { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 5px; background: var(--surface-2); color: var(--ink-2); }
+
+/* ---------- dialogs ---------- */
+.dlg-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.dlg-head h3 { margin: 0; font-size: 17px; font-weight: 650; }
+.dlg-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.dlg-foot .muted { flex: 1; }
+.dialog.wide { width: min(760px, 100%); }
+.form { display: grid; grid-template-columns: 110px 1fr; gap: 10px 12px; align-items: center; font-size: 13.5px; color: var(--ink-2); margin: 12px 0; }
+.form input, .form select { width: 100%; }
+.form .inline { display: flex; gap: 8px; }
+.dest { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+.sub-details { margin: 10px 0; }
+.sub-details summary { cursor: pointer; color: var(--ink-2); font-size: 13px; user-select: none; }
+.sub-details[open] summary { margin-bottom: 8px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); margin: 4px 0; }
+.drop { border: 1.5px dashed var(--axis); border-radius: 12px; padding: 28px 16px; text-align: center; color: var(--ink-2);
+  cursor: pointer; display: grid; justify-items: center; gap: 6px; transition: border-color .15s, background .15s; }
+.drop .ic { color: var(--accent); }
+.drop:hover, .drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.summary { display: grid; gap: 4px; margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: var(--surface-2); }
+.msg { font-size: 13px; padding: 9px 12px; border-radius: 8px; background: var(--surface-2); color: var(--ink-2); margin: 10px 0; }
+.msg.ok { color: var(--ink); }
+.msg.err { color: var(--critical); background: color-mix(in srgb, var(--critical) 8%, transparent); }
+#mSessions { margin-top: 10px; }
+.help { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
+.help h4 { color: var(--ink); font-size: 14px; margin: 18px 0 6px; }
+.help h4:first-child { margin-top: 0; }
+.help p { margin: 0; }
+.help ul { margin: 0; padding-left: 18px; }
+.help code { font-size: 12.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+.busy { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; }
+.busy.open { display: flex; }
+.busy .box { background: var(--surface); padding: 18px 22px; border-radius: 12px; display: flex; gap: 14px; align-items: center; max-width: 90vw; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+.spin { width: 20px; height: 20px; border: 2.5px solid var(--grid); border-top-color: var(--accent); border-radius: 50%; animation: sp 0.8s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* ---------- sub-tabs (khung chi tiết) ---------- */
+.subhead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; border-bottom: 1px solid var(--border); }
+.subhead .sub { color: var(--muted); font-size: 13px; margin-left: auto; }
+.subhead select { margin-left: auto; margin-bottom: 6px; }
+.subtabs { display: flex; gap: 2px; }
+.subtabs button { border: 0; background: none; padding: 6px 12px 9px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.subtabs button:hover { color: var(--ink); }
+.subtabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ---------- không giám sát ---------- */
+#tabPaper, #tabUnsup, #tabMl, #tabSex { display: grid; gap: 16px; }
+/* ---------- tab Phân tích ---------- */
+.ana-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.ana-q { font-weight: 600; color: var(--ink); }
+#anaIntro { flex-basis: 100%; }
+details.more > summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+details.more[open] > summary { margin-bottom: 14px; }
+details.more > .stack { gap: 16px; }
+/* ---------- tab Trứng nở · Trống/Mái ---------- */
+#sxLabels { width: 320px; max-width: 100%; }
+#sxKpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#sxTable tr { cursor: pointer; }
+#sxTable tr.on td { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+#sxTable td.sig { color: var(--good); font-weight: 700; }
+.sx-g { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 6px; color: #fff; font-weight: 600; font-size: 12px; text-align: center; }
+.sbar { display: inline-block; width: 70px; height: 7px; border-radius: 4px; background: var(--surface-2); vertical-align: middle; margin-right: 6px; overflow: hidden; }
+.sbar > i { display: block; height: 100%; background: var(--accent); }
+#mlTable tr.lab-pos td { background: color-mix(in srgb, var(--critical) 7%, transparent); }
+.two.even.tight { gap: 8px; }
+.help.explain { display: grid; gap: 6px; }
+.help.explain details { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; transition: background .4s; }
+.help.explain details > summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+.help.explain details[open] > summary { margin-bottom: 6px; }
+.mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.mini-grid > div { border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px 2px; }
+.mini-grid .mini-t { margin: 0; justify-content: space-between; }
+.mini-grid .plot { height: 220px; }
+.symtag { display: inline-block; width: 1em; text-align: center; color: var(--ink-2); }
+.chip.x.on { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--ink); }
+.help.explain details.flash { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.card h2 .icon-btn { width: 26px; height: 26px; }
+.ctab { width: auto; margin: 10px 0 6px; }
+.ctab th, .ctab td { text-align: center !important; padding: 4px 12px; }
+.ctab td:first-child { text-align: left !important; font-weight: 600; }
+
+/* ---------- mô phỏng bài báo ---------- */
+.cbar.flat { padding: 0 0 10px; }
+.mini-t { font-size: 13px; font-weight: 600; color: var(--ink); margin: 4px 0 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mini-t .muted { font-weight: 400; }
+.screen-bar { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.ctl.small { font-size: 12.5px; }
+.ctl.small select, .sm-sel { height: 28px; font-size: 12.5px; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 13px; margin-top: 10px; color: var(--ink-2); }
+.kv b { color: var(--ink); font-weight: 600; }
+
+/* ---------- tabs (trên thanh tiêu đề) + compare ---------- */
+.tabs { display: flex; gap: 2px; padding: 3px; background: var(--surface-2); border-radius: 9px; overflow-x: auto; max-width: 100%; }
+.tabs button { border: 0; background: none; height: 28px; padding: 0 12px; border-radius: 7px; font-size: 13.5px; font-weight: 550; color: var(--ink-2); white-space: nowrap; }
+.tabs button:hover { color: var(--ink); }
+.tabs button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.10); }
+.popwrap { position: relative; }
+.pop { position: absolute; right: 0; top: 40px; z-index: 30; display: grid; grid-template-columns: auto auto; gap: 10px 12px; align-items: center;
+  padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.15);
+  font-size: 13.5px; color: var(--ink-2); white-space: nowrap; }
+.pop .rng { display: flex; align-items: center; gap: 6px; }
+.pop input[type=number] { width: 72px; }
+.pop .pr { display: contents; }
+details.sess { padding: 10px 16px; }
+details.sess > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13.5px; }
+details.sess > summary::-webkit-details-marker { display: none; }
+details.sess > summary > .ic { width: 16px; height: 16px; color: var(--muted); transition: transform .15s; }
+details.sess[open] > summary { margin-bottom: 10px; }
+details.sess[open] > summary > .ic { transform: rotate(90deg); }
+.card h2 .end { margin-left: auto; }
+.card h2 .sub.full { flex-basis: 100%; }
+#tabEgg, #tabCmp { display: grid; gap: 16px; }
+.cbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.two.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 1200px) { .two.even { grid-template-columns: 1fr; } }
+.btn.sm { height: 28px; padding: 0 9px; font-size: 12.5px; }
+.cpick { position: sticky; top: 64px; max-height: calc(100vh - 80px); display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+.cpick-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cpick-foot { display: flex; gap: 6px; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; }
+.cpick-foot select { flex: 1; min-width: 0; height: 28px; }
+.pick-list { overflow-y: auto; display: grid; gap: 2px; }
+.pick-row { display: flex; align-items: center; gap: 6px; padding: 3px 4px; border-radius: 6px; }
+.pick-row:hover { background: var(--surface-2); }
+.pick-row label { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; cursor: pointer; font-size: 13px; }
+.pick-row .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; border: 1px solid var(--border); }
+.gsel { height: 26px; font-size: 12px; padding: 0 4px; width: 104px; }
+/* ---------- tab Tình trạng ---------- */
+#tabStatus { display: grid; gap: 16px; }
+#tabStatus[hidden] { display: none; }
+.st-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .st-main { grid-template-columns: 1fr; } }
+/* KPI */
+.st-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 12px; align-items: stretch; }
+@media (max-width: 900px) { .st-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.st-kpi { display: grid; gap: 2px; text-align: left; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); border-top: 3px solid var(--c, var(--axis)); }
+.st-kpi:hover { background: var(--surface-2); }
+.st-kpi.on { outline: 2px solid var(--accent); outline-offset: -1px; }
+.st-kpi .v { font-size: 28px; font-weight: 700; line-height: 1.1; color: var(--ink); }
+.st-kpi .v small { font-size: 15px; font-weight: 500; color: var(--muted); }
+.st-kpi .k { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.st-kpi .bd { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; min-height: 22px; }
+.st-kpi-tools { display: flex; align-items: center; gap: 4px; }
+/* chips */
+.st-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 16%, transparent); color: color-mix(in srgb, var(--c) 70%, var(--ink)); white-space: nowrap; }
+.st-chip .gdot { background: var(--c); margin: 0; }
+.st-chip.lg { font-size: 14px; padding: 5px 14px; }
+/* grid */
+.st-grid-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.st-grid-head h2 { margin: 0; }
+.st-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.st-tile { position: relative; display: grid; gap: 4px; text-align: left; padding: 10px 12px; border-radius: 10px; min-height: 86px;
+  border: 1px solid var(--border); background: var(--surface); font-size: 12.5px; transition: transform .08s, box-shadow .12s; }
+.st-tile:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.st-tile.has { background: color-mix(in srgb, var(--c) 10%, var(--surface)); border-color: color-mix(in srgb, var(--c) 45%, transparent); }
+.st-tile.on { outline: 2.5px solid var(--accent); outline-offset: 1px; box-shadow: 0 4px 14px rgba(0,0,0,.10); }
+.st-tile .n { font-size: 22px; font-weight: 700; line-height: 1; }
+.st-tile .s { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: color-mix(in srgb, var(--c) 75%, var(--ink)); }
+.st-tile:not(.has) .s { font-weight: 400; color: var(--muted); }
+.st-tile .d { font-size: 11.5px; color: var(--muted); }
+.st-tile .st-badge { position: absolute; top: 8px; right: 8px; }
+.st-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: #fff; }
+.st-badge.crit { background: var(--critical); }
+.st-badge.warn { background: var(--warning); color: #3a2a00; }
+/* detail */
+.st-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.st-head .t { font-size: 22px; font-weight: 700; }
+.st-head .meta { color: var(--muted); font-size: 13px; }
+.st-panel { background: var(--surface-2); border-radius: 10px; padding: 12px; display: grid; gap: 10px; margin-bottom: 16px; }
+.st-panel .lbl, .st-sec { font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }
+.st-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-pick button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, var(--axis)); background: var(--surface); }
+.st-pick button .gdot { background: var(--c); margin: 0; }
+.st-pick button:hover { background: color-mix(in srgb, var(--c) 10%, var(--surface)); }
+.st-pick button.on { background: var(--c); border-color: var(--c); color: #fff; font-weight: 650; }
+.st-pick button.on .gdot { background: #fff; }
+.st-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+@media (max-width: 640px) { .st-row { grid-template-columns: 1fr 1fr; } .st-row #stNote { grid-column: 1 / -1; } }
+.st-row input[type=date] { background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; height: 32px; padding: 0 8px; }
+.st-file { position: relative; overflow: hidden; }
+.st-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.st-file.has { border-color: var(--accent); color: var(--accent); }
+.st-hist { display: grid; gap: 10px; max-height: 460px; overflow-y: auto; margin-top: 8px; }
+.st-ev { border: 1px solid var(--border); border-left: 4px solid var(--c); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; background: var(--surface); }
+.st-ev-h { display: flex; align-items: center; gap: 10px; font-weight: 650; }
+.st-note { white-space: pre-wrap; font-size: 13.5px; line-height: 1.5; }
+.st-photo { max-width: 240px; max-height: 170px; border-radius: 8px; border: 1px solid var(--border); display: block; }
+.st-empty { color: var(--muted); font-size: 13px; padding: 14px; text-align: center; border: 1px dashed var(--axis); border-radius: 8px; }
+/* pattern library */
+.st-pat { border: 1px solid var(--border); border-left: 4px solid var(--c); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
+.st-pat + .st-pat { margin-top: 10px; }
+.st-pat .pt { font-weight: 650; font-size: 14px; }
+.st-pat .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+.st-pat .egg-btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--c) 50%, var(--axis)); background: color-mix(in srgb, var(--c) 10%, var(--surface)); }
+.st-pat .egg-btn:hover { background: color-mix(in srgb, var(--c) 20%, var(--surface)); }
+.st-pat .egg-btn small { font-weight: 400; color: var(--ink-2); }
+.st-pat details summary { cursor: pointer; font-size: 12.5px; font-weight: 650; color: var(--ink-2); }
+.st-pat ol { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; line-height: 1.5; }
+.st-verdict .pm { margin-top: 4px; font-size: 12.5px; }
+/* signal verdict */
+.st-verdict { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px;
+  background: color-mix(in srgb, var(--c) 12%, transparent); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); }
+.st-verdict .ico { width: 26px; height: 26px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; font-weight: 800; flex: none; }
+.st-verdict .vt { font-weight: 650; }
+.st-verdict .vd { font-size: 12.5px; color: var(--ink-2); }
+.icon-btn.sm { width: 26px; height: 26px; }
+.icon-btn.sm .ic { width: 14px; height: 14px; }
+.brand-t { display: grid; line-height: 1.15; }
+.ver-btn { border: 0; background: transparent; color: var(--muted); font-size: 11px; font-weight: 400; padding: 0; white-space: nowrap; text-align: left; letter-spacing: 0; }
+.ver-btn:hover { color: var(--ink); text-decoration: underline; }
+.ver-pop { display: block; left: 0; right: auto; top: 22px; font-weight: 400; min-width: 300px; max-width: 420px; white-space: normal; }
+.ver-it { display: grid; grid-template-columns: 84px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--ink); }
+.ver-it:first-of-type { margin-top: 6px; }
+.gdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+.chip.x { border: 0; cursor: pointer; display: inline-flex; align-items: center; }
+.chip.x:hover { background: var(--grid); }
+.tbl-wrap.tall { max-height: 460px; }
+.ftable th.sortable { cursor: pointer; user-select: none; }
+.ftable th.sortable:hover { color: var(--ink); }
+.ftable tfoot td { background: var(--surface-2); font-size: 12px; border-bottom-color: var(--border); }
+.ftable tfoot tr.grp td:first-child { text-align: left; }
+.ftable td.strong { color: var(--accent); font-weight: 700; }
+.raw-badge { font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--warning) 25%, transparent); color: var(--ink); }
+textarea { width: 100%; min-height: 180px; font: 13px/1.5 ui-monospace, Consolas, monospace; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--axis); border-radius: 8px; padding: 8px 10px; outline: none; resize: vertical; }
+textarea:focus { border-color: var(--accent); }
+.lang-sel { width: auto; padding: 0 6px; font-size: 13px; }
+.px-img { width: 100%; border-radius: 8px; display: block; background: var(--surface-2); min-height: 200px; }
+#pxTable td:first-child, #pxTable th:first-child { text-align: left; }
+#shTable tr.on td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+#tabShape, #shBody { display: grid; gap: 16px; }
+#tabShape[hidden], #shBody[hidden] { display: none; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4m0 0-4 4m4-4 4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6M5 11.5v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></symbol>
+    <symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6zM9 10h6M9 14h6M9 18h4"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+    <symbol id="i-egg" viewBox="0 0 24 24"><path d="M12 3c3.6 0 6.5 6 6.5 10.5a6.5 6.5 0 0 1-13 0C5.5 9 8.4 3 12 3z"/></symbol>
+  </defs>
+</svg>
+
+<header>
+  <div class="brand"><span class="logo"><svg class="ic"><use href="#i-egg"/></svg></span>
+    <div class="brand-t">In-ovo Dashboard
+      <div class="popwrap"><button class="ver-btn" id="verBtn" data-pop="verPop" hidden title="Lần cập nhật dashboard"></button>
+        <div class="pop ver-pop" id="verPop" hidden><div id="verList"></div></div></div>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" data-dash><button data-tab="egg" class="on">Từng trứng</button><button data-tab="status">Tình trạng</button><button data-tab="shape">Hình dạng trứng</button><button data-tab="cmp">So sánh</button><button data-tab="ana">Phân tích</button></nav>
+  <span class="spacer"></span>
+  <div class="srcpick" data-dash>
+    <select id="srcSel" aria-label="Nguồn dữ liệu"></select>
+    <button class="icon-btn ghost" id="closeSrcBtn" title="Đóng nguồn này"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+  <label class="live" id="liveWrap" data-dash title="Hỏi lại MongoDB mỗi 15 giây"><input type="checkbox" id="liveChk"><span class="dot" id="liveDot"></span><span id="liveTxt">Đồng bộ</span></label>
+  <button class="icon-btn" id="refreshBtn" data-dash title="Phân tích lại (R)"><svg class="ic"><use href="#i-refresh"/></svg></button>
+  <div class="popwrap" data-dash>
+    <button class="icon-btn" id="setBtn" data-pop="setPop" title="Bước sóng & làm mượt"><svg class="ic"><use href="#i-sliders"/></svg></button>
+    <div class="pop" id="setPop" hidden>
+      <span title="Trung bình trượt áp dụng cho mọi tab (Raw ADC không làm mượt)">Làm mượt</span>
+      <select id="smoothSel"><option value="1">Không</option><option value="5">5 điểm</option><option value="11" selected>11 điểm</option><option value="21">21 điểm</option></select>
+      <span title="Dải bước sóng dùng cho band mean, time series và tổng quan">Band</span>
+      <span class="rng"><input id="bandLo" type="number" value="604" step="1"><span class="muted">–</span><input id="bandHi" type="number" value="922" step="1"><span class="muted">nm</span></span>
+      <span title="Khoảng bước sóng hiển thị trên các đồ thị phổ">Trục λ</span>
+      <span class="rng"><input id="xLo" type="number" value="580"><span class="muted">–</span><input id="xHi" type="number" value="960"><span class="muted">nm</span></span>
+    </div>
+  </div>
+  <button class="btn primary" id="addSrcBtn" data-dash><svg class="ic"><use href="#i-plus"/></svg>Dữ liệu</button>
+  <select id="langSel" class="lang-sel" aria-label="Ngôn ngữ" title="Ngôn ngữ"></select>
+  <button class="icon-btn" id="helpBtn" title="Hướng dẫn"><svg class="ic"><use href="#i-help"/></svg></button>
+  <button class="icon-btn" id="themeBtn" title="Sáng / tối"><svg class="ic"><use href="#i-theme"/></svg></button>
+</header>
+
+<!-- ============ Màn hình bắt đầu ============ -->
+<main id="start">
+  <button class="back" id="backBtn" hidden><svg class="ic"><use href="#i-left"/></svg>Quay lại dashboard</button>
+  <h2>Mở dữ liệu</h2>
+  <p class="lede">Chọn một nguồn để bắt đầu phân tích.</p>
+  <div class="tiles">
+    <button class="tile" id="tileUpload">
+      <span class="tile-ic"><svg class="ic"><use href="#i-upload"/></svg></span>
+      <span><span class="tile-t">Tải thư mục lên</span><span class="tile-d">Session hoặc batch từ máy đo</span></span>
+      <svg class="ic chev"><use href="#i-chev"/></svg>
+    </button>
+    <button class="tile" id="tileMongo">
+      <span class="tile-ic"><svg class="ic"><use href="#i-db"/></svg></span>
+      <span><span class="tile-t">Kết nối MongoDB</span><span class="tile-d">Đọc trực tiếp từ database</span></span>
+      <svg class="ic chev"><use href="#i-chev"/></svg>
+    </button>
+  </div>
+  <section id="recentCard" hidden>
+    <div class="label">Gần đây</div>
+    <div class="list" id="recentList"></div>
+  </section>
+</main>
+
+<div class="wrap" id="dash" hidden>
+  <div id="tabEgg">
+  <details class="card sess" id="sessCard">
+    <summary><svg class="ic"><use href="#i-chev"/></svg><b>Batch</b><span class="muted" id="sessionSub"></span><span id="sessFlags"></span></summary>
+    <div class="timeline" id="timeline"></div>
+    <div class="lamp-chart" id="lampPlot"></div>
+  </details>
+
+  <div class="main">
+    <aside class="card">
+      <input class="egg-filter" id="eggFilter" type="text" placeholder="Tìm trứng (label / egg_id)…">
+      <div class="egg-list" id="eggList"></div>
+    </aside>
+
+    <div class="stack">
+      <section class="card">
+        <div class="egg-head">
+          <div><div class="big" id="eggTitle">—</div><div class="hint" id="eggSub"></div></div>
+          <span id="eggGroup"></span>
+          <div class="chips" id="eggChips"></div>
+          <span class="spacer"></span>
+          <span class="seg" id="endSeg" title="Đầu đo">
+            <button data-v="blunt" class="on">Tù</button><button data-v="pointed">Nhọn</button><button data-v="both">Cả hai</button></span>
+          <select id="modeSel" aria-label="Đại lượng" title="Đại lượng phổ">
+            <option value="raw">Raw ADC</option>
+            <option value="dA">ΔA so với lần đầu</option>
+            <option value="counts">Counts (trừ dark)</option>
+            <option value="T">T</option>
+            <option value="A">A (OD)</option>
+            <option value="norm">Hình dạng</option>
+          </select>
+          <button class="icon-btn" id="prevEgg" title="Trứng trước (↑)"><svg class="ic"><use href="#i-left"/></svg></button>
+          <button class="icon-btn" id="nextEgg" title="Trứng sau (↓)"><svg class="ic"><use href="#i-chev"/></svg></button>
+        </div>
+      </section>
+
+      <div class="two">
+        <section class="card">
+          <h2>Phổ theo từng batch <span class="sub" id="specSub"></span></h2>
+          <div class="plot" id="specPlot"></div>
+        </section>
+        <section class="card">
+          <h2>Time series <span class="chips" id="tsChips"></span></h2>
+          <div class="plot" id="tsPlot"></div>
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="subhead">
+          <nav class="subtabs" id="subTabs">
+            <button data-sub="img">Ảnh</button><button data-sub="map">Bản đồ phổ</button><button data-sub="meas">Phép đo</button><button data-sub="heat">Tổng quan trứng × batch</button>
+          </nav>
+          <span class="sub" id="mapSub" data-for="map"></span>
+          <select id="heatSel" data-for="heat" aria-label="Đại lượng tổng quan">
+            <option value="dA_blunt">ΔA band — tù</option>
+            <option value="dA_pointed">ΔA band — nhọn</option>
+            <option value="c_blunt">Counts band — tù</option>
+            <option value="c_pointed">Counts band — nhọn</option>
+            <option value="T_blunt">T band — tù</option>
+            <option value="T_pointed">T band — nhọn</option>
+            <option value="r_blunt">Raw ADC band — tù</option>
+            <option value="r_pointed">Raw ADC band — nhọn</option>
+          </select>
+        </div>
+        <div id="pImg" data-panel="img"><div class="gallery" id="gallery"></div></div>
+        <div id="pMap" data-panel="map" hidden><div class="plot sm" id="mapPlot"></div></div>
+        <div id="pMeas" data-panel="meas" hidden><div class="tbl-wrap"><table id="measTable"></table></div></div>
+        <div id="pHeat" data-panel="heat" hidden><div class="plot heat" id="heatPlot"></div></div>
+      </section>
+    </div>
+  </div>
+  </div>
+  <!-- ============ Tab Tình trạng ============ -->
+  <div id="tabStatus" hidden>
+    <div class="st-kpis" id="stKpis"></div>
+    <div class="st-main">
+      <div class="stack">
+      <section class="card">
+        <div class="st-grid-head"><h2>Khay trứng</h2><span class="muted small" id="stFiltTxt"></span><span class="spacer"></span>
+          <button class="btn sm" id="stClearFilt" hidden>Bỏ lọc</button></div>
+        <div class="st-grid" id="stGrid"></div>
+      </section>
+      <section class="card st-pats">
+        <h2>Pattern phổ đã biết <span class="sub">dấu hiệu nhận biết · trứng khớp tự động</span></h2>
+        <div id="stPatterns"></div>
+      </section>
+      </div>
+      <div class="stack">
+        <section class="card">
+          <div class="st-head"><span class="t" id="stEggTitle"></span><span id="stEggBadge"></span><span class="meta" id="stEggSub"></span>
+            <span class="spacer"></span><button class="btn sm" id="stOpenEgg">Xem phổ</button></div>
+          <div class="st-panel">
+            <div class="lbl">Ghi tình trạng mới</div>
+            <div class="st-pick" id="stPick"></div>
+            <div class="st-row">
+              <input type="date" id="stDate" aria-label="Ngày">
+              <input type="text" id="stNote" placeholder="Ghi chú (soi trứng, quan sát…)">
+              <label class="btn st-file" id="stFileBtn" title="Ảnh"><svg class="ic"><use href="#i-upload"/></svg><span id="stFileTxt">Ảnh</span><input type="file" id="stPhoto" accept="image/*" aria-label="Ảnh"></label>
+              <button class="btn primary" id="stSave">Lưu</button>
+            </div>
+          </div>
+          <div class="st-sec">Lịch sử</div>
+          <div class="st-hist" id="stHist"></div>
+        </section>
+        <section class="card">
+          <h2>Tín hiệu phổ <span class="spacer"></span><button class="icon-btn ghost" id="stHelp" title="Cách dùng"><svg class="ic"><use href="#i-help"/></svg></button></h2>
+          <div id="stVerdict"></div>
+          <div class="plot" id="stSig"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <!-- ============ Tab Hình dạng ============ -->
+  <div id="tabShape" hidden>
+    <section class="card cbar">
+      <select id="shEgg" aria-label="Trứng" title="Trứng"></select>
+      <span class="ctl" title="Độ lệch đầu tù / đầu nhọn của mô hình Hügelschäffer (w/L = 0: ellipse)">w/L <input id="shWL" type="number" step="0.002" min="0" max="0.2" style="width:80px"></span>
+      <button class="btn sm" id="shWLAuto" title="Dùng w/L khớp từ ảnh hiệu chuẩn">Tự động</button>
+      <span class="seg" id="shUnit" title="Đơn vị của hình chồng các trứng"><button data-v="mm" class="on">mm</button><button data-v="rel">x/L</button></span>
+      <span class="spacer"></span>
+      <span class="muted small" id="shSrc"></span>
+      <button class="icon-btn ghost" id="shHelp" title="Cách tính"><svg class="ic"><use href="#i-help"/></svg></button>
+    </section>
+    <div class="card empty" id="shEmpty" hidden>Session này chưa có số đo kích thước (outputs_shape/*.csv).</div>
+    <div id="shBody">
+      <div class="two even">
+        <section class="card">
+          <h2>Đường viền <span class="sub" id="shEggSub"></span></h2>
+          <div class="plot" id="shPlot"></div>
+          <div class="kv" id="shKv"></div>
+        </section>
+        <section class="card">
+          <h2>Tất cả trứng <span class="sub">màu = nhóm · click để chọn</span></h2>
+          <div class="plot" id="shAll"></div>
+        </section>
+      </div>
+      <div class="two even">
+        <section class="card">
+          <h2>Số đo theo thời gian <span class="sub">✕ = lần đo bị loại</span></h2>
+          <div class="plot sm" id="shTs"></div>
+        </section>
+        <section class="card">
+          <h2>Không gian hình dạng
+            <span class="ctl end">X <select id="shFx" class="sm-sel"></select></span><span class="ctl">Y <select id="shFy" class="sm-sel"></select></span></h2>
+          <div class="plot sm" id="shScatter"></div>
+        </section>
+      </div>
+      <section class="card">
+        <h2>Từ pixel ảnh: vi phân → tích phân <span class="sub" id="pxSub"></span>
+          <select id="pxBatch" class="sm-sel end" aria-label="Ảnh" title="Ảnh"></select></h2>
+        <div class="muted small" id="pxStatus"></div>
+        <div id="pxBody" hidden>
+          <div class="two even">
+            <div><img id="pxImg" class="px-img" alt=""><div class="muted small">xanh lá = mép tìm bằng vi phân · đỏ = điểm bị loại · vàng = đường viền (chuỗi Fourier)</div></div>
+            <div><div class="plot" id="pxPlot"></div></div>
+          </div>
+          <div class="two even">
+            <div><div class="mini-t">Vi phân: dI/dr dọc theo tia <span class="muted">I = R − B · 0 = mép tìm được</span></div><div class="plot sm" id="pxDeriv"></div></div>
+            <div><div class="mini-t">Bán kính mép r(θ) và dr/dθ <span class="muted">chấm = từ vi phân · đường = chuỗi Fourier</span></div><div class="plot sm" id="pxPolar"></div></div>
+          </div>
+          <div class="two even">
+            <div><div class="mini-t">Tích phân: pixel so với mô hình</div><div class="tbl-wrap"><table class="ftable" id="pxTable"></table></div></div>
+            <div><div class="mini-t">Thể tích từ pixel theo batch <span class="muted">đường chấm = Hügelschäffer (CSV)</span></div><div class="plot sm" id="pxTs"></div></div>
+          </div>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Bảng hình dạng <span class="sub" id="shTblSub"></span></h2>
+        <div class="tbl-wrap tall"><table id="shTable" class="ftable"></table></div>
+      </section>
+    </div>
+  </div>
+  <!-- ============ Tab So sánh ============ -->
+  <div id="tabCmp" hidden>
+    <section class="card cbar">
+      <span class="seg endseg" id="cEndSeg" title="Đầu đo"><button data-v="blunt" class="on">Tù</button><button data-v="pointed">Nhọn</button></span>
+      <select id="cBatch" aria-label="Batch" title="Batch"></select>
+      <span class="spacer"></span>
+      <span class="seg" id="cViewSeg"><button data-v="eggs" class="on">Từng trứng</button><button data-v="groups">Trung bình nhóm</button></span>
+    </section>
+
+    <div class="main">
+      <aside class="card cpick">
+        <div class="cpick-head"><b>Trứng</b><span class="muted small" id="cCount"></span><span class="spacer"></span>
+          <button class="btn sm" id="cAll">Tất cả</button><button class="btn sm" id="cHatched" title="Chỉ chọn các trứng có tình trạng Đã nở (tab Tình trạng)">Đã nở</button><button class="btn sm" id="cNone">Bỏ chọn</button></div>
+        <div class="chips" id="cChips"></div>
+        <div class="pick-list" id="cList"></div>
+        <div class="cpick-foot">
+          <select id="cAssign" aria-label="Nhóm"><option value="male">Trống</option><option value="female">Mái</option><option value="infertile">Không phôi</option><option value="fertile">Có phôi</option><option value="">Bỏ nhóm</option></select>
+          <button class="btn sm" id="cAssignBtn" title="Gán nhóm cho các trứng đang chọn">Gán cho đã chọn</button>
+          <button class="icon-btn" id="cImportBtn" title="Nhập nhóm từ danh sách"><svg class="ic"><use href="#i-note"/></svg></button>
+        </div>
+      </aside>
+
+      <div class="stack">
+        <div class="two even">
+          <section class="card">
+            <h2>Phổ <select id="cMode" class="sm-sel end" aria-label="Đại lượng phổ">
+                <option value="norm">Hình dạng (chuẩn hoá)</option>
+                <option value="raw">Raw ADC (không xử lý)</option>
+                <option value="counts">Counts (trừ dark)</option>
+                <option value="dA">ΔA so với lần đầu</option>
+                <option value="T">T</option>
+                <option value="A">A</option>
+              </select><span class="sub full" id="cSpecSub"></span></h2>
+            <div class="plot" id="cSpec"></div>
+          </section>
+          <section class="card">
+            <h2>Đường phát triển <select id="cGrow" class="sm-sel end" aria-label="Đại lượng phát triển">
+                <option value="dA">ΔA band</option>
+                <option value="counts">Counts band</option>
+                <option value="raw">Raw ADC band</option>
+                <option value="T">T band</option>
+                <option value="rnir">Tỷ số R/NIR</option>
+                <option value="peak">λ đỉnh</option>
+              </select><span class="sub full" id="cGrowSub"></span></h2>
+            <div class="plot" id="cGrowPlot"></div>
+          </section>
+        </div>
+        <section class="card" id="cEffectCard" hidden>
+          <h2>Khác biệt giữa nhóm theo bước sóng <span class="sub">Cohen's d · đường chấm = |d| 0.8</span></h2>
+          <div class="plot sm" id="cEffect"></div>
+        </section>
+        <div class="two even">
+          <section class="card">
+            <h2>Không gian đặc trưng
+              <span class="ctl end">X <select id="cFx" class="sm-sel"></select></span><span class="ctl">Y <select id="cFy" class="sm-sel"></select></span></h2>
+            <div class="plot" id="cScatter"></div>
+          </section>
+          <section class="card">
+            <h2>Đặc trưng từng trứng</h2>
+            <div class="tbl-wrap tall"><table id="cTable" class="ftable"></table></div>
+          </section>
+        </div>
+      </div>
+    </div>
+    <!-- Mô phỏng bài báo (nằm cuối tab So sánh; dùng chung đầu đo và dữ liệu) -->
+    <div id="tabPaper">
+      <section class="card">
+        <div class="subhead">
+          <h2 style="margin:0 0 8px">Mô phỏng bài báo <span class="sub">Li et al. 2026 · D2 + D5, ΔS, R · đầu đo theo thanh trên cùng · trứng chọn bằng nút Tất cả trứng / Chỉ trứng đã nở (không theo danh sách bên trái)</span></h2>
+          <button class="icon-btn ghost" id="pInfo" title="Bài báo dựa trên lý thuyết gì?" style="margin:0 0 6px auto"><svg class="ic"><use href="#i-help"/></svg></button>
+        </div>
+        <div class="cbar flat">
+          <span class="ctl"><select id="pA" aria-label="Batch A (sớm)" title="Batch A (sớm, ≈ D2)"></select> → <select id="pB" aria-label="Batch B (muộn)" title="Batch B (muộn, ≈ D5)"></select></span>
+          <span class="seg" id="pEggs" title="Trứng dùng cho mọi hình và sàng lọc"><button data-v="all" class="on">Tất cả trứng</button><button data-v="hatched" title="Chỉ các trứng có tình trạng Đã nở (tab Tình trạng)">Chỉ trứng đã nở</button></span>
+          <span class="seg" id="pBasis" title="Cơ sở"><button data-v="T" class="on" title="T = (S−D)/(L−D) như bài báo">T</button><button data-v="counts" title="Counts trừ dark — không phụ thuộc đèn">Counts</button></span>
+          <span class="ctl"><select id="pG1" aria-label="Nhóm 1"></select> vs <select id="pG2" aria-label="Nhóm 2"></select></span>
+        </div>
+        <div class="two even">
+          <div><div class="mini-t">Phổ trung bình theo batch <span class="muted">(Hình 7)</span></div><div class="plot sm" id="pFig7"></div></div>
+          <div><div class="mini-t">Chênh lệch nhóm theo batch <span class="muted" id="pFig8Sub">(Hình 8)</span></div>
+            <div class="plot sm" id="pFig8"></div><div class="empty" id="pFig8Empty" hidden>Cần ít nhất 1 trứng mỗi nhóm trong các trứng đang chọn.</div></div>
+        </div>
+        <div class="mini-t" style="margin-top:12px">Thay đổi phát triển trên cùng quả trứng <span class="muted" id="pDeltaSub"></span>
+          <span class="seg" id="pDView" style="height:26px;margin-left:auto"><button data-v="eggs" class="on">Từng trứng</button><button data-v="groups">Trung bình nhóm</button></span></div>
+        <div class="two even">
+          <div class="plot sm" id="pDS"></div>
+          <div class="plot sm" id="pR"></div>
+        </div>
+        <div class="screen-bar">
+          <div class="mini-t" style="margin:0">Sàng lọc batch &amp; cặp batch bằng SVM <span class="muted">(Hình 9–12)</span></div>
+          <span class="spacer"></span>
+          <span class="ctl small">Hoán vị nhãn <select id="pNperm"><option value="0">0</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></span>
+          <button class="btn primary sm" id="pRun">Chạy sàng lọc</button>
+          <button class="btn sm" id="pCancel" hidden>Huỷ</button>
+        </div>
+        <div class="progress"><div id="pProg"></div></div>
+        <div class="muted small" id="pStatus" style="margin-top:6px"></div>
+        <div id="pScreenOut" hidden>
+          <div class="two even" style="margin-top:10px">
+            <div><div class="mini-t">AUC theo batch / cặp batch
+              <select id="pHeatKind" class="sm-sel"><option value="all">S_A+S_B+ΔS+R</option><option value="concat">S_A+S_B</option><option value="dS">ΔS</option><option value="R">R</option></select></div>
+              <div class="plot sm" id="pScrHeat"></div></div>
+            <div><div class="mini-t">Bộ đặc trưng cho cặp A, B <span class="muted">· đường đỏ = 95% AUC ngẫu nhiên</span></div>
+              <div class="plot sm" id="pLolli"></div></div>
+          </div>
+          <div id="pSummary"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <!-- ============ Tab Phân tích: chọn câu hỏi, mỗi câu hỏi là một khung bên dưới (Học máy · Trống/Mái · Phân cụm) ============ -->
+  <section class="card ana-bar" id="anaBar" hidden>
+    <span class="ana-q">Câu hỏi</span>
+    <span class="seg" id="anaSeg"><button data-ana="ml">Trứng nào không phôi?</button><button data-ana="sex">Trứng nở tách được Trống / Mái?</button><button data-ana="unsup">Phân cụm tự do</button></span>
+    <span class="muted small" id="anaIntro"></span>
+  </section>
+  <!-- ============ Tab Phân cụm (không giám sát) ============ -->
+  <div id="tabUnsup" hidden>
+    <section class="card cbar">
+      <span class="seg endseg" title="Đầu đo"><button data-v="blunt">Tù</button><button data-v="pointed">Nhọn</button></span>
+      <select id="uRep" aria-label="Dữ liệu đầu vào" title="Dữ liệu đầu vào">
+        <option value="spec">Phổ 1 batch</option>
+        <option value="day">Phổ 1 ngày</option>
+        <option value="pair">Ghép 2 ngày</option>
+        <option value="merge">Ghép 2 ngày + Δ gốc</option>
+        <option value="paper">Như bài báo (S, ΔS, R)</option>
+        <option value="dS">ΔS giữa 2 batch</option>
+        <option value="traj">Quỹ đạo theo thời gian</option>
+        <option value="feat">Bảng đặc trưng</option>
+      </select>
+      <span class="ctl" data-urep="spec"><select id="uBatch" aria-label="Batch"></select></span>
+      <span class="ctl" data-urep="day pair merge paper"><select id="uDA" aria-label="Ngày A"></select><span data-urep="pair merge">+</span><span data-urep="paper">→</span><select id="uDB" data-urep="pair merge paper" aria-label="Ngày B"></select></span>
+      <span class="ctl" data-urep="merge" title="Thêm khối hiệu A − gốc và B − gốc">Δ <select id="uDR" aria-label="Ngày gốc"></select></span>
+      <span class="ctl" data-urep="spec day pair merge paper"><select id="uMode" aria-label="Đại lượng" title="Đại lượng phổ">
+        <option value="norm">Hình dạng</option><option value="mm">Min–max 0–1</option><option value="A">A (OD)</option><option value="Ac">A bỏ offset</option><option value="dA">ΔA</option><option value="T">T</option><option value="counts">Counts</option><option value="raw">Raw ADC</option>
+      </select></span>
+      <span class="ctl" data-urep="dS"><select id="uA"></select> → <select id="uB"></select></span>
+      <span class="ctl" data-urep="dS"><span class="seg" id="uBasis"><button data-v="counts">Counts</button><button data-v="T">T</button></span></span>
+      <span class="ctl" data-urep="traj"><select id="uTraj" aria-label="Đại lượng quỹ đạo">
+        <option value="dA">ΔA band</option><option value="counts">Counts band</option><option value="rnir">R/NIR</option><option value="peak">λ đỉnh</option>
+      </select></span>
+      <span class="spacer"></span>
+      <select id="uMethod" aria-label="Thuật toán phân cụm" title="Thuật toán phân cụm">
+        <option value="kmeans">K-Means</option><option value="gmm">Gaussian Mixture</option><option value="ward">Ward</option><option value="dbscan">DBSCAN</option>
+      </select>
+      <span class="ctl" id="uKWrap">k <input id="uK" type="number" min="2" max="8" value="3" style="width:56px"></span>
+      <div class="popwrap">
+        <button class="icon-btn" data-pop="uPop" title="Tuỳ chọn"><svg class="ic"><use href="#i-sliders"/></svg></button>
+        <div class="pop" id="uPop" hidden>
+          <span title="Chuẩn hoá từng biến (cột) trước khi chạy thuật toán">Chuẩn hoá</span>
+          <select id="uScale"><option value="z">z-score</option><option value="minmax">Min–max 0–1</option><option value="none">Không</option></select>
+          <span>Bản đồ 2D</span>
+          <select id="uEmbed"><option value="pca">PCA</option><option value="tsne">t-SNE</option><option value="mds">MDS</option></select>
+          <span>Hình điểm</span>
+          <select id="uSymBy"><option value="ref">Cụm tham chiếu</option><option value="group">Nhóm đã gán</option></select>
+          <span class="pr" id="uEpsWrap" hidden><span>eps (DBSCAN)</span><input id="uEps" type="number" step="0.1" placeholder="tự động"></span>
+        </div>
+      </div>
+      <button class="icon-btn ghost" data-explain="intro" title="Giải thích"><svg class="ic"><use href="#i-help"/></svg></button>
+    </section>
+    <div class="muted small" id="uStatus" style="margin:-6px 2px 0"></div>
+
+    <div class="two even">
+      <section class="card">
+        <h2>Bản đồ 2D <span class="sub">màu = cụm</span></h2>
+        <div class="plot" id="uEmbedPlot"></div>
+      </section>
+      <section class="card">
+        <h2>Hồ sơ cụm <span class="sub">TB ± SD</span></h2>
+        <div class="plot" id="uProfPlot"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="subhead">
+        <nav class="subtabs" id="uDiagTabs">
+          <button data-ud="table">Kết quả</button><button data-ud="k">Số cụm k</button><button data-ud="pca">PCA</button><button data-ud="ward">Dendrogram</button><button data-ud="anomaly">Bất thường</button><button data-ud="stab">Ổn định</button><button data-ud="scan">Quét ngày</button>
+        </nav>
+        <span class="sub" data-udf="anomaly">đỏ = Isolation top 10% và LOF &gt; 1.5</span>
+        <span class="sub" data-udf="stab" id="uRefSub"></span>
+        <button class="icon-btn ghost" id="uDiagHelp" title="Giải thích" style="margin-bottom:6px"><svg class="ic"><use href="#i-help"/></svg></button>
+      </div>
+      <div data-udp="table" class="two even">
+        <div class="tbl-wrap tall"><table id="uTable" class="ftable"></table></div>
+        <div><div class="mini-t">Cụm so với nhóm đã gán</div><div id="uAgree"></div></div>
+      </div>
+      <div data-udp="k" class="two even tight" hidden><div class="plot sm" id="uKPlot"></div><div class="plot sm" id="uElbowPlot"></div></div>
+      <div data-udp="pca" class="two even tight" hidden><div class="plot sm" id="uVarPlot"></div><div class="plot sm" id="uLoadPlot"></div></div>
+      <div data-udp="ward" hidden><div class="plot" id="uDendroPlot"></div></div>
+      <div data-udp="anomaly" hidden><div class="plot" id="uAnomPlot"></div></div>
+      <div data-udp="stab" hidden>
+        <div class="cbar flat">
+          <button class="btn sm" id="uRefSet" title="Ghi lại cụm hiện tại của từng trứng thành hình cố định">Đặt làm tham chiếu</button>
+          <button class="btn sm" id="uRefClear" hidden>Bỏ tham chiếu</button>
+          <button class="btn primary sm" id="uTrackRun" hidden title="Phân cụm lại cho từng batch và từng ngày, so với tham chiếu">Theo dõi theo batch &amp; ngày</button>
+        </div>
+        <div id="uRefOut"></div>
+        <div id="uTrackOut" hidden>
+          <div class="two even" style="margin-top:12px">
+            <div><div class="mini-t">Độ giống tham chiếu theo thời gian <span class="muted" id="uTrackSub"></span></div><div class="plot sm" id="uTrackAri"></div></div>
+            <div><div class="mini-t">Cụm từng trứng theo batch / ngày <span class="muted">(n) = số lần đổi cụm</span></div><div class="plot" id="uTrackHeat"></div></div>
+          </div>
+        </div>
+      </div>
+      <div data-udp="scan" hidden>
+        <div class="cbar flat">
+          <span class="chips" id="uScanDays"></span>
+          <span class="spacer"></span>
+          <select id="uScanMetric" class="sm-sel" aria-label="Thước đo"><option value="silhouette">Silhouette</option><option value="refari">ARI với tham chiếu</option><option value="ari">ARI với nhóm</option><option value="nmi">NMI với nhóm</option></select>
+          <button class="btn primary sm" id="uScanRun">Chạy quét</button>
+        </div>
+        <div class="muted small" id="uScanStatus"></div>
+        <div id="uScanOut" hidden>
+          <div class="mini-t" style="margin-top:12px">Từng ngày <span class="muted">PC1–PC2 · click tên để mở</span></div>
+          <div class="mini-grid" id="uScanSingles"></div>
+          <div class="two even" style="margin-top:12px">
+            <div><div class="mini-t">1 ngày (chéo) và ghép 2 ngày</div><div class="plot sm" id="uScanHeat"></div></div>
+            <div><div class="mini-t">Ghép 2 ngày + Δ so với gốc</div><div class="plot sm" id="uScanMerge"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <!-- ============ Tab Học máy ============ -->
+  <div id="tabMl" hidden>
+    <section class="card cbar">
+      <span class="seg" id="mlTask"><button data-v="infertile" class="on">Không phôi</button><button data-v="sex">Trống / Mái</button></span>
+      <span class="seg" id="mlEnds" title="Đầu đo"><button data-v="both" class="on">Cả hai</button><button data-v="blunt">Tù</button><button data-v="pointed">Nhọn</button></span>
+      <select id="mlFeats" aria-label="Đặc trưng" title="Đặc trưng">
+        <option value="dev">Thay đổi phát triển</option><option value="spec">Phổ ngày A, B + Δ</option><option value="both">Cả hai</option>
+      </select>
+      <span class="ctl" data-mlspec><select id="mlDA" aria-label="Ngày A"></select> + <select id="mlDB" aria-label="Ngày B"></select> Δ <select id="mlDR" aria-label="Ngày gốc"></select></span>
+      <span class="spacer"></span>
+      <div class="popwrap">
+        <button class="icon-btn" data-pop="mlPop" title="Tuỳ chọn"><svg class="ic"><use href="#i-sliders"/></svg></button>
+        <div class="pop" id="mlPop" hidden>
+          <span title="Dùng khi đủ ≥ 3 trứng mỗi lớp">Mô hình</span>
+          <select id="mlModel"><option value="lr">Logistic</option><option value="svm">SVM</option><option value="rf">Random Forest</option></select>
+          <span title="Số lần xáo nhãn để kiểm tra AUC có hơn may rủi không">Hoán vị</span>
+          <select id="mlPerm"><option value="0">0</option><option value="20">20</option><option value="50" selected>50</option><option value="100">100</option></select>
+        </div>
+      </div>
+      <button class="btn primary sm" id="mlRun">Chạy</button>
+      <button class="icon-btn ghost" id="mlHelp" title="Cách hoạt động"><svg class="ic"><use href="#i-help"/></svg></button>
+    </section>
+    <div class="muted small" id="mlStatus" style="margin:-6px 2px 0"></div>
+
+    <div class="two even">
+      <section class="card">
+        <h2 id="mlListTitle">Ứng viên không phôi <span class="sub" id="mlListSub"></span></h2>
+        <div class="tbl-wrap tall"><table id="mlTable" class="ftable"></table></div>
+      </section>
+      <div class="stack">
+        <section class="card">
+          <h2>Kiểm chứng</h2>
+          <div id="mlCheck"></div>
+        </section>
+        <section class="card">
+          <h2>Quỹ đạo phát triển <select id="mlTrajKind" class="sm-sel end"><option value="shape">Đổi hình dạng phổ</option><option value="dA">ΔA band</option></select></h2>
+          <div class="plot sm" id="mlTraj"></div>
+          <div class="muted small">đỏ = không phôi · cam = 5 ứng viên đầu · xanh = có phôi</div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <!-- ============ Tab Trứng nở · Trống/Mái ============ -->
+  <div id="tabSex" hidden>
+    <section class="card cbar">
+      <label class="ctl" title="Số trứng, cách nhau bởi dấu phẩy, khoảng trắng hoặc gạch ngang">Trứng <input type="text" id="sxLabels" placeholder="vd 15-17-27 5-16-18"></label>
+      <button class="btn sm" id="sxHatched" title="Lấy các trứng có tình trạng Đã nở ở tab Tình trạng">Theo tab Tình trạng</button>
+      <span class="spacer"></span>
+      <div class="popwrap">
+        <button class="icon-btn" data-pop="sxPop" title="Tuỳ chọn"><svg class="ic"><use href="#i-sliders"/></svg></button>
+        <div class="pop" id="sxPop" hidden>
+          <span title="Ngày gốc để tính hiệu Δ">Ngày gốc</span>
+          <select id="sxBase"></select>
+          <span title="Số bộ dữ liệu giả không có cụm dùng để tính p">Dữ liệu giả</span>
+          <select id="sxNull"><option value="100">100</option><option value="200" selected>200</option><option value="500">500</option><option value="1000">1000</option></select>
+        </div>
+      </div>
+      <button class="btn primary sm" id="sxRun">Chạy</button>
+      <button class="icon-btn ghost" id="sxHelp" title="Cách hoạt động"><svg class="ic"><use href="#i-help"/></svg></button>
+    </section>
+    <div class="muted small" id="sxStatus" style="margin:-6px 2px 0"></div>
+    <div class="two even">
+      <section class="card">
+        <h2>Kết luận</h2>
+        <div id="sxVerdict"></div>
+      </section>
+      <section class="card">
+        <h2>So với dữ liệu ngẫu nhiên <span class="sub">mỗi điểm = 1 cách nhìn dữ liệu · nằm trên đường chéo = tách rõ hơn ngẫu nhiên</span></h2>
+        <div class="plot sm" id="sxR2"></div>
+      </section>
+    </div>
+    <section class="card">
+      <h2>Từng trứng <span class="sub">gán Trống / Mái khi đã biết giới tính → tự đối chiếu</span></h2>
+      <div class="tbl-wrap"><table id="sxEggs" class="ftable"></table></div>
+    </section>
+    <details class="card more" id="sxMore">
+      <summary>Chi tiết kỹ thuật — 99 cấu hình, PCA, phổ 2 nhóm, đồng thuận</summary>
+      <div class="stack">
+        <div class="st-kpis" id="sxKpis"></div>
+        <div class="two even">
+          <section class="card">
+            <h2>Các cấu hình <span class="sub">bấm một dòng để xem chi tiết</span></h2>
+            <div class="tbl-wrap tall"><table id="sxTable" class="ftable"></table></div>
+          </section>
+          <div class="stack">
+            <section class="card">
+              <h2 id="sxCfgTitle">PC1 – PC2</h2>
+              <div class="plot sm" id="sxPca"></div>
+            </section>
+            <section class="card">
+              <h2>Phổ trung bình 2 nhóm <span class="sub" id="sxSpecSub"></span></h2>
+              <div class="plot sm" id="sxSpec"></div>
+            </section>
+          </div>
+        </div>
+        <div class="two even">
+          <section class="card">
+            <h2>Đồng thuận giữa các cấu hình <span class="sub">tỷ lệ cấu hình xếp 2 trứng cùng nhóm</span></h2>
+            <div class="plot sm" id="sxSame"></div>
+          </section>
+          <section class="card">
+            <h2>Trứng × cấu hình <span class="sub">màu = nhóm (khớp với chia đồng thuận)</span></h2>
+            <div class="plot sm" id="sxStrip"></div>
+          </section>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- Trứng nở · Trống/Mái: cách hoạt động -->
+<div class="modal" id="sxModal">
+  <div class="dialog wide">
+    <div class="dlg-head"><h3>Trứng nở có tách thành 2 nhóm Trống / Mái không?</h3><button class="icon-btn ghost" data-close="sxModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div class="help" data-i18n="help.sex">
+      <h4>Câu hỏi</h4>
+      <p>Chỉ xét các trứng đã nở (chắc chắn có phôi phát triển tới cùng), <b>không dùng nhãn</b>: phổ của chúng có tự chia thành 2 nhóm rõ ràng không? Nếu giới tính để lại dấu vết trên phổ, ta kỳ vọng một cách chia đôi mạnh hơn hẳn ngẫu nhiên và lặp lại ở nhiều ngày / đầu đo.</p>
+      <h4>Mỗi cấu hình</h4>
+      <ul>
+        <li><b>Đầu đo</b>: tù, nhọn, hoặc ghép cả hai. <b>Đại lượng</b>: hình dạng phổ (counts / TB band, đã làm mượt), đạo hàm theo λ, hoặc chỉ 2 vùng của bài báo (594–620, 660–675 nm). <b>Dữ liệu</b>: phổ 1 ngày, hiệu với ngày gốc, hoặc như bài báo (gốc ‖ D5 ‖ Δ).</li>
+        <li>Mỗi khối trừ trung bình và chia căn tổng phương sai; PCA giữ 95% phương sai.</li>
+        <li><b>Chia đôi tốt nhất</b>: với ≤ 16 trứng duyệt <b>mọi</b> cách chia (mỗi nhóm ≥ 2 trứng; 10 trứng = 501 cách), chọn cách có R² = 1 − SSW/SST lớn nhất (k-means k = 2 tối ưu toàn cục).</li>
+      </ul>
+      <h4>Có hơn ngẫu nhiên không? (kiểu SigClust)</h4>
+      <p>Với ít trứng, chia đôi tốt nhất <b>luôn</b> trông khá tách (R² 0.5–0.7, silhouette 0.3–0.5) ngay cả với dữ liệu không có cụm. Vì vậy tạo nhiều bộ dữ liệu giả Gaussian có cùng phương sai từng PC nhưng không có cụm, chạy y hệt, và tính <b>p</b> = tỷ lệ dữ liệu giả có R² ≥ R² thật. Có ~100 cấu hình nên ~5 cấu hình p &lt; 0.05 là chuyện ngẫu nhiên; cột <b>q</b> là p hiệu chỉnh Benjamini–Hochberg.</p>
+      <h4>Đồng thuận và gây nhiễu</h4>
+      <ul>
+        <li><b>Đồng thuận</b>: tỷ lệ cấu hình xếp 2 trứng cùng nhóm; <b>chia đồng thuận</b> là cách chia khớp nhiều nhất với các cấu hình. ARI của từng cấu hình với chia đồng thuận cho biết các cấu hình có cùng ý kiến không.</li>
+        <li><b>Độ sáng vỏ</b>: nếu 2 nhóm khác nhau rõ về log counts band (|d| lớn) thì cách chia nhiều khả năng do vỏ / cách đặt trứng, không phải giới tính. Hình dạng phổ đã bỏ độ sáng tổng, nhưng màu vỏ vẫn đổi hình dạng.</li>
+        <li><b>Ngày nở</b> lấy từ tab Tình trạng, để xem nhóm có trùng với nở sớm / muộn không.</li>
+      </ul>
+      <h4>Khi đã biết giới tính</h4>
+      <p>Gán Trống / Mái ở bảng Từng trứng (dùng chung với các tab khác). Khi có ≥ 2 mỗi giới, bảng cấu hình thêm cột độ chính xác, và chia đồng thuận được chấm bằng p chính xác (tỷ lệ mọi cách gán cùng số Trống / Mái đạt độ chính xác ≥ thật). Không chọn cấu hình theo độ chính xác rồi báo cáo độ chính xác đó — sẽ lạc quan giả.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Học máy: cách hoạt động -->
+<div class="modal" id="mlModal">
+  <div class="dialog wide">
+    <div class="dlg-head"><h3>Tab Học máy hoạt động thế nào?</h3><button class="icon-btn ghost" data-close="mlModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div class="help" data-i18n="help.ml">
+      <h4>Ý tưởng: trứng không phôi không phát triển</h4>
+      <p>Trứng có phôi thay đổi theo ngày ấp (mạch máu, hemoglobin, mô phôi) nên phổ truyền qua đổi hình dạng, hấp thụ tăng và tỷ số đỏ/NIR giảm. Trứng không phôi gần như giữ nguyên. Vì vậy dashboard đo <b>mức thay đổi của chính quả trứng so với ngày đầu</b>, cho từng ngày sau và từng đầu đo:</p>
+      <ul>
+        <li><b>Đổi hình dạng</b>: trung bình |S_d/mean − S_đầu/mean| trong band — không phụ thuộc độ sáng vỏ.</li>
+        <li><b>ΔA band</b> = log10(S_đầu / S_d) — chỉ dùng counts nên không phụ thuộc đèn.</li>
+        <li><b>Đổi R/NIR</b> = (620–680 / 780–880 nm) ngày d − ngày đầu.</li>
+      </ul>
+      <h4>Khi mới có rất ít nhãn (hiện tại)</h4>
+      <ul>
+        <li><b>Chỉ số phát triển</b>: trung bình z-score của các đặc trưng trên (âm = phát triển ít). <b>Không dùng nhãn nào</b> — nên có thể dùng để kiểm chứng: nếu trứng không phôi đã biết đứng đầu danh sách thì cách đo này có ý nghĩa.</li>
+        <li><b>Giống trứng đã biết</b>: gần trứng không phôi đã gán bao nhiêu (và xa trứng có phôi đã gán bao nhiêu).</li>
+        <li><b>PU learning</b> (Positive–Unlabeled): hồi quy logistic lặp nhiều lần, dương = trứng không phôi đã gán, âm = một nửa ngẫu nhiên số trứng chưa gán (+ trứng có phôi đã gán); điểm của mỗi trứng lấy từ các lần nó không nằm trong tập huấn luyện.</li>
+        <li><b>Điểm tổng hợp</b> = trung bình phân vị hạng của các điểm trên (1 = giống không phôi nhất).</li>
+      </ul>
+      <h4>Vòng lặp gán nhãn</h4>
+      <p>Xem ảnh, ghi chú soi trứng và quỹ đạo của các ứng viên đầu danh sách; khi chắc chắn (soi trứng D7–D10, đập trứng, hoặc không nở) thì gán <b>Không phôi</b> hoặc <b>Có phôi</b> ngay trong bảng. Dashboard chạy lại và xếp hạng mới dùng các nhãn đó. Nhãn <b>Có phôi</b> = có phôi nhưng chưa rõ giới; Trống / Mái cũng tính là có phôi.</p>
+      <h4>Khi đủ nhãn (≥ 3 mỗi lớp): học có giám sát</h4>
+      <ul>
+        <li>Logistic (mặc định, ổn định nhất khi ít mẫu), SVM RBF hoặc Random Forest; chuẩn hoá và PCA được fit <b>bên trong</b> từng fold.</li>
+        <li><b>AUC kiểm định chéo</b> phân tầng lặp lại; cột "CV" của trứng đã gán là điểm khi trứng đó nằm ngoài tập huấn luyện; trứng chưa gán được dự đoán bằng mô hình học trên tất cả trứng đã gán.</li>
+        <li><b>Kiểm định hoán vị</b>: xáo nhãn và chạy lại; chỉ tin AUC khi p &lt; 0.05. Với ít nhãn, AUC = 1 vẫn có thể do may rủi.</li>
+      </ul>
+      <h4>Trống / Mái</h4>
+      <p>Không có tín hiệu "tự nhiên" như phát triển, nên chỉ chạy khi đã có ≥ 3 Trống và ≥ 3 Mái (nhãn lấy từ lông/giới tính sau nở). Đặc trưng gợi ý: phổ ngày A, B và hiệu Δ (bài báo dùng D2 + D5); khác biệt trống–mái rất nhỏ nên cần nhiều trứng.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Upload -->
+<div class="modal" id="upModal">
+  <div class="dialog">
+    <div class="dlg-head"><h3>Tải thư mục lên</h3><button class="icon-btn ghost" data-close="upModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <input type="file" id="upInput" webkitdirectory directory multiple hidden>
+    <div class="drop" id="dropZone">
+      <svg class="ic lg"><use href="#i-folder"/></svg>
+      <div><b>Chọn thư mục</b> hoặc kéo thả vào đây</div>
+      <div class="muted small" id="storeDir"></div>
+    </div>
+    <div id="upSummary" hidden>
+      <div class="summary">
+        <div><span class="badge" id="upKind"></span> <b id="upTop"></b></div>
+        <div class="muted small" id="upCounts"></div>
+      </div>
+      <div class="form">
+        <label id="upSessLbl" for="upSess">Session đích</label>
+        <div id="upSessRow" class="inline"><select id="upSess"></select><input type="text" id="upNewSess" placeholder="Tên session mới" hidden></div>
+        <label id="upBatchLbl" for="upBatch" hidden>Gắn vào batch</label>
+        <select id="upBatch" hidden></select>
+        <label>Đích</label><code class="dest" id="upDest"></code>
+      </div>
+      <div class="msg err" id="upWarn" hidden></div>
+      <details class="sub-details"><summary>Danh sách file &amp; tuỳ chọn</summary>
+        <label class="check"><input type="checkbox" id="upSkipZip" checked> Bỏ qua file .zip</label>
+        <label class="check"><input type="checkbox" id="upOverwrite"> Ghi đè file trùng tên khác kích thước</label>
+        <pre id="upPlan"></pre>
+      </details>
+      <div class="progress"><div id="upProg"></div></div>
+    </div>
+    <div class="dlg-foot">
+      <span class="muted small" id="upStatus"></span>
+      <button class="btn" data-close="upModal">Huỷ</button>
+      <button class="btn primary" id="upGo" disabled>Tải lên &amp; phân tích</button>
+    </div>
+  </div>
+</div>
+
+<!-- MongoDB -->
+<div class="modal" id="mongoModal">
+  <div class="dialog">
+    <div class="dlg-head"><h3>Kết nối MongoDB</h3><button class="icon-btn ghost" data-close="mongoModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div class="form">
+      <label for="mUri">URI</label><input id="mUri" type="text" placeholder="mongodb://user:pass@host:27017" value="mongodb://localhost:27017" spellcheck="false">
+      <label for="mDb">Database</label><input id="mDb" type="text" placeholder="inovo" value="inovo" spellcheck="false">
+    </div>
+    <details class="sub-details"><summary>Tuỳ chỉnh tên collection</summary>
+      <div class="form">
+        <label for="mColS">sessions</label><input id="mColS" type="text">
+        <label for="mColM">measurements</label><input id="mColM" type="text">
+        <label for="mColI">images</label><input id="mColI" type="text">
+        <label for="mColB">GridFS bucket</label><input id="mColB" type="text">
+      </div>
+    </details>
+    <div id="mMsg"></div>
+    <div class="list" id="mSessions"></div>
+    <div class="dlg-foot">
+      <span class="spacer"></span>
+      <button class="btn" data-close="mongoModal">Huỷ</button>
+      <button class="btn primary" id="mTest">Kết nối</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hướng dẫn: chỉ hiện khi bấm ? -->
+<div class="modal" id="helpModal">
+  <div class="dialog wide">
+    <div class="dlg-head"><h3>Hướng dẫn</h3><button class="icon-btn ghost" data-close="helpModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div class="help" data-i18n="help.main">
+      <h4>Quy trình</h4>
+      <p>Dashboard không tự đọc dữ liệu. Dữ liệu chỉ được phân tích sau khi bạn <b>tải thư mục lên</b> hoặc <b>kết nối MongoDB</b> và chọn một session. Có thể mở nhiều nguồn, chuyển qua lại ở ô chọn nguồn trên thanh tiêu đề.</p>
+      <h4>Tải thư mục lên</h4>
+      <ul>
+        <li><b>Thư mục session</b> (chứa <code>session_info.json</code> và các <code>batch_XX_…</code>, tuỳ chọn <code>outputs_shape</code>) hoặc <b>thư mục batch</b> do app đo ghi ra (<code>metadata_log.csv</code>, CSV phổ, thư mục ảnh BMP).</li>
+        <li><b>Thư mục ảnh</b> riêng lẻ: gắn vào một batch của session đang mở.</li>
+        <li>File đã có trên server (cùng tên, cùng kích thước) được bỏ qua — tải lại cả session vẫn nhanh. Tải thêm batch vào cùng session sẽ phân tích lại toàn bộ session.</li>
+        <li>Tên ảnh <code>N__YYYY-MM-DD__HH-MM-SS.bmp</code>, N = egg_label (có hoặc không có số 0 đứng trước).</li>
+      </ul>
+      <h4>MongoDB</h4>
+      <ul>
+        <li><code>measurements</code>: mỗi document = 1 dòng <code>metadata_log.csv</code> (session, batch_no, measurement_type, sample_id, timestamp, egg_label, egg_end, …) + <code>wavelengths[]</code> + <code>counts[]</code>.</li>
+        <li><code>images</code>: {session, batch_no, egg_label, timestamp, filename} + <code>gridfs_id</code> | <code>data</code> | <code>path</code>.</li>
+        <li><code>sessions</code> (tuỳ chọn): nội dung <code>session_info.json</code>, dùng <code>incubation_start</code>.</li>
+        <li>Đẩy một session thư mục lên Mongo: <code>python dashboard/mongo_import.py --db inovo --session-dir &lt;thư mục&gt;</code>.</li>
+        <li>Bật <b>Đồng bộ</b> để dashboard hỏi lại database mỗi 15 giây. Mật khẩu trong URI không được lưu.</li>
+      </ul>
+      <h4>Đại lượng</h4>
+      <ul>
+        <li><b>ΔA</b> = log10(S₀/S): thay đổi so với lần đo đầu của chính quả trứng (chỉ dùng counts trứng, không phụ thuộc đèn). ΔA &gt; 0 = hấp thụ tăng. Vùng tín hiệu &lt; 4% cực đại bị bỏ.</li>
+        <li><b>Counts</b>: ADC đã trừ dark của cùng batch. <b>T</b> = (S−D)/(L−D), <b>A</b> = −log10 T — phụ thuộc đèn, mà đèn trôi giữa các batch.</li>
+        <li><b>Band</b>: dải bước sóng tính trung bình cho time series và bảng tổng quan. <b>Trục λ</b>: khoảng bước sóng hiển thị trên các đồ thị phổ. Cả hai, cùng <b>Làm mượt</b> (dùng chung cho mọi tab), chỉnh ở nút ⚙ trên thanh tiêu đề. Các tab khác có nút ⚙ riêng cho tuỳ chọn ít dùng.</li>
+      </ul>
+      <h4>So sánh trứng</h4>
+      <ul>
+        <li>Tab <b>So sánh</b>: tick chọn các trứng, gán nhóm <b>Trống / Mái / Không phôi</b> (từng trứng, "Gán cho đã chọn", hoặc nhập danh sách). Nhóm được lưu theo session tại <code>outputs/dashboard_tags/</code>.</li>
+        <li><b>Hình dạng</b> = counts / trung bình band: loại bỏ khác biệt độ sáng vỏ, chỉ còn hình dạng phổ. <b>Trung bình nhóm</b> hiển thị TB ± SD.</li>
+        <li><b>Cohen's d</b> theo bước sóng: chênh lệch trung bình giữa 2 nhóm chia độ lệch chuẩn gộp; |d| ≥ 0.8 là khác biệt lớn. Cần ≥ 2 trứng mỗi nhóm.</li>
+        <li><b>Đặc trưng</b>: độ sáng vỏ, ΔA cuối, tốc độ ΔA, R/NIR, λ đỉnh, PC1/PC2 (PCA trên hình dạng phổ của các trứng đang chọn), và kích thước trứng (L, B, SI, thể tích) khi có <code>outputs_shape</code>. Dòng cuối bảng cho mức tách nhóm lớn nhất của từng đặc trưng.</li>
+      </ul>
+      <h4>Hình dạng trứng</h4>
+      <p>Tab <b>Hình dạng trứng</b> đọc số đo kích thước trong <code>outputs_shape/*.csv</code>, dựng đường viền từng trứng bằng mô hình Hügelschäffer và tính tích phân trên đường viền (chu vi, diện tích, thể tích, diện tích vỏ). Chi tiết ở nút ? của tab đó.</p>
+      <h4>Raw</h4>
+      <p><b>Raw ADC (không xử lý)</b> vẽ đúng cột Raw_ADC_Counts trong file: không trừ dark, không làm mượt, không nội suy, không che vùng tín hiệu yếu, toàn dải bước sóng, trục tự co giãn. Dark và Lamp gốc của từng batch có thể bật ở chú thích.</p>
+      <h4>Thao tác</h4>
+      <ul>
+        <li>Màu phổ nhạt → đậm = batch sớm → muộn.</li>
+        <li>Click lên đồ thị phổ để theo dõi một bước sóng (±5 nm) ở time series.</li>
+        <li>Click ảnh để phóng to; click lần nữa để zoom; ← → chuyển batch; chọn "So sánh với" để xem 2 batch cạnh nhau.</li>
+        <li>Click một ô ở bảng tổng quan để mở quả trứng đó.</li>
+        <li>Phím tắt: ↑ ↓ đổi trứng · R phân tích lại · Esc đóng hộp thoại.</li>
+        <li>Ngôn ngữ: ô chọn trên thanh tiêu đề (Tiếng Việt, English, 繁體中文, 简体中文).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Lý thuyết bài báo -->
+<div class="modal" id="paperModal">
+  <div class="dialog wide">
+    <div class="dlg-head"><h3>Bài báo dựa trên lý thuyết gì?</h3><button class="icon-btn ghost" data-close="paperModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div class="help" data-i18n="help.paper">
+      <p class="muted">Li et al. (2026), <i>Animals</i> 16:2796 — Vis–NIR truyền qua, 1600 trứng vỏ hồng, D1–D7, nhãn giới tính lấy từ màu lông sau khi nở.</p>
+      <h4>1. Phổ truyền qua phản ánh sự phát triển của phôi</h4>
+      <p>Mô phôi, mạng mạch máu, hấp thụ của hemoglobin và tán xạ thay đổi theo ngày ấp, làm ánh sáng đi qua trứng giảm dần (Hình 7: T trung bình 510–755 nm giảm từ 0.603 ở D1 xuống 0.417 ở D7) nhưng <b>hình dạng phổ gần như giữ nguyên</b>. Phổ được chuẩn hoá thành truyền qua tương đối <code>T = (S − D) / (L − D)</code> với tham chiếu trắng/tối hiệu chuẩn lại mỗi 30 phút.</p>
+      <h4>2. Khác biệt trống – mái rất nhỏ và phụ thuộc giai đoạn</h4>
+      <p>Chênh lệch trung bình trống − mái chỉ 0.0015–0.0072 đơn vị T (lớn nhất 0.025 ở 615 nm, D3), nằm ở các vùng khác nhau theo ngày: ~620 nm (D2), ~671 nm (D5), ~594 nm (D7). Chênh lệch trung bình lớn chưa chắc phân loại tốt vì còn phụ thuộc độ phân tán trong nhóm.</p>
+      <h4>3. Đo dọc trên cùng một quả trứng</h4>
+      <p>Thay vì so trứng này với trứng khác, mỗi trứng được so với chính nó ở hai thời điểm: <code>ΔS = S_D5 − S_D2</code> (hướng và độ lớn thay đổi) và <code>R = ΔS / (S_D2 + 0.02)</code> (tốc độ thay đổi tương đối — giảm ảnh hưởng độ dày/màu vỏ và độ sáng ban đầu). Cặp D2 + D5 bổ sung cho nhau tốt nhất (AUC 0.951 trong 21 cặp); thêm ΔS, R lên 0.965; thêm nhiều ngày hơn lại giảm.</p>
+      <h4>4. Phân loại và vùng bước sóng</h4>
+      <p>DSSF-Net: hai bộ mã hoá CNN riêng cho D2 và D5, hai MLP cho ΔS và R, rồi attention trộn bốn nhánh. Kết quả: AUC 0.974 (CV), 0.966 trên tập giữ lại, 0.926 khi thử trên batch ấp chưa từng thấy. CARS, SPA, SHAP và ablation cùng chỉ ra <b>594–620 nm</b> và <b>660–675 nm</b> (tô vàng trên các biểu đồ).</p>
+      <h4>Mục này trong dashboard làm gì</h4>
+      <ul>
+        <li>Batch A ≈ D2 (24–48 h), Batch B ≈ D5 (96–120 h) — tự chọn batch gần nhất, đổi được.</li>
+        <li>Hình 7, Hình 8, ΔS và R theo nhóm trên các trứng đang chọn; không làm mượt, như bài báo. Cơ sở <b>T</b> dùng lamp của từng batch; <b>Counts</b> không phụ thuộc đèn (đèn của mình trôi mạnh giữa các batch) — khi đó ε = 0.02 × mức counts trung vị.</li>
+        <li>Sàng lọc: SVM RBF (C = 10) + AUC kiểm định chéo phân tầng lặp lại, cho từng batch (đường chéo) và mọi cặp batch × 4 bộ đặc trưng. Thêm các đặc trưng ΔS/R của 2 vùng bài báo vào bảng "Đặc trưng từng trứng".</li>
+        <li><b>Kiểm định hoán vị</b>: xáo nhãn ngẫu nhiên rồi chạy lại toàn bộ sàng lọc, lấy AUC lớn nhất. Với vài chục trứng, chọn cấu hình tốt nhất trong ~120 cấu hình cho AUC 0.8–0.9 kể cả khi nhãn vô nghĩa — chỉ tin kết quả khi AUC thật vượt rõ phân phối này.</li>
+        <li>Khác bài báo: N nhỏ hơn ~50 lần, không grid search, đo tù/nhọn riêng (bài báo: đèn dưới đầu nhọn, camera trên đầu tù), 1 lần đo/batch (bài báo trung bình 2 lần × 3 khung/ngày).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Hình dạng: cách tính -->
+<div class="modal" id="statusModal">
+  <div class="dialog wide">
+    <div class="dlg-head"><h3>Theo dõi tình trạng trứng</h3><button class="icon-btn ghost" data-close="statusModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div class="help" data-i18n="help.status">
+      <h4>Ghi tình trạng</h4>
+      <p>Chọn trứng ở khay bên trái, bấm một nút tình trạng, chọn ngày, thêm ghi chú hoặc ảnh rồi bấm <b>Lưu</b>. Bấm các thẻ số liệu phía trên để lọc khay. Mỗi lần lưu là một ghi chép mới; tình trạng hiện tại là ghi chép có ngày muộn nhất. Nhật ký lưu trên server tại <code>outputs/egg_status/&lt;session&gt;.json</code>, ảnh ở thư mục <code>&lt;session&gt;_files</code> bên cạnh.</p>
+      <h4>Tín hiệu phổ</h4>
+      <p>Mỗi batch và mỗi đầu đo, phổ trứng được so với trung vị cả đàn và trừ mức của chính trứng ở 2 batch đầu (khử đèn và màu vỏ), rồi tính robust z giữa các trứng:</p>
+      <ul>
+        <li><b>Đỏ/NIR</b> = log S(665–700 nm) / S(740–865 nm). z ≤ −6: đỏ bị hấp thụ mạnh bất thường (cờ ⚠); z ≤ −3: lệch nhẹ (!). Đây là dấu hiệu của trứng 29 (không nở, ghi nhận 19/10/2026): bắt đầu ở B08 (113 h), rất mạnh ở B09 (144 h).</li>
+        <li><b>Độ sáng NIR</b> = log S(740–865 nm). z ≥ +4: sáng bất thường so với đàn, do ngừng phát triển hoặc phổ bị nhiễu (jump).</li>
+      </ul>
+      <p>Cờ chỉ gợi ý trứng cần soi lại, không phải chẩn đoán. Hấp thụ đỏ cũng tăng dần ở trứng vỏ sáng có mạch máu rõ (ví dụ 0030); trứng 29 khác ở chỗ tụt đột ngột giữa hai batch.</p>
+    </div>
+  </div>
+</div>
+<div class="modal" id="shapeModal">
+  <div class="dialog wide">
+    <div class="dlg-head"><h3>Đường viền trứng được tính thế nào?</h3><button class="icon-btn ghost" data-close="shapeModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div class="help" data-i18n="help.shape">
+      <h4>Dữ liệu</h4>
+      <p>Mỗi file <code>outputs_shape/*.csv</code> là một lần đo kích thước cả khay bằng <code>src/egg_size.py</code> (ảnh Basler, GrabCut + khớp ellipse): chiều dài <b>L</b> và chiều rộng <b>B</b> theo mm. Cột <code>area_mm2</code> = πLB/4 chỉ là diện tích ellipse nên không thêm thông tin. Tải cả thư mục session lên (kèm <code>outputs_shape</code>) để dashboard đọc được.</p>
+      <h4>Profile từng trứng</h4>
+      <p>Vỏ trứng không đổi theo ngày ấp, nên khác biệt giữa các lần đo chủ yếu là sai số đo. Mỗi trứng lấy <b>trung vị</b> L, B qua các lần đo có status <code>ok</code>, bỏ lần đo lệch khỏi trung vị quá max(3·MAD, 1 mm) (thường do tách nền sai). Lần bị loại hiện dấu ✕ ở đồ thị theo thời gian.</p>
+      <h4>Mô hình đường viền: Hügelschäffer</h4>
+      <p>Ellipse đối xứng, không có đầu tù / đầu nhọn. Mô hình Hügelschäffer (Narushin et al. 2021) thêm một tham số lệch <b>w</b>:</p>
+      <p><code>y(x) = ± B/2 · √((L² − 4x²) / (L² + 8wx + 4w²)),  x ∈ [−L/2, L/2]</code></p>
+      <p>w &gt; 0 đưa phần rộng nhất về phía đầu tù (bên trái). w không đo được từ CSV nên mọi trứng dùng chung <b>w = (w/L)·L</b>, với w/L khớp từ đường viền thật của các ảnh hiệu chuẩn (bảng dưới) hoặc nhập tay. w/L = 0 là ellipse.</p>
+      <h4>Tích phân trên đường viền</h4>
+      <ul>
+        <li>Chu vi hình chiếu <code>P = ∮ ds</code></li>
+        <li>Diện tích hình chiếu <code>A = ½ ∮ (x dy − y dx)</code> (định lý Green)</li>
+        <li>Thể tích <code>V = π ∫ y² dx</code> (khối tròn xoay quanh trục dài)</li>
+        <li>Diện tích vỏ <code>S = 2π ∫ y ds</code></li>
+      </ul>
+      <p>Tính số trên đường viền 2000 điểm. Thể tích và diện tích vỏ gần như không phụ thuộc w (đổi w/L trong khoảng 0.034–0.074 chỉ làm V đổi khoảng 0.3%), nên đáng tin; phần chưa chắc chắn là hình dạng đầu nhọn của từng trứng cụ thể.</p>
+      <h4>Từ pixel ảnh: vi phân → tích phân</h4>
+      <p>Cách thứ hai, không giả định hình dạng: lấy đường viền thẳng từ ảnh của từng batch (cùng ảnh mà <code>egg_size.py</code> đã đo).</p>
+      <ul>
+        <li><b>Vi phân</b>: mặt nạ GrabCut cho tâm trứng và mép gần đúng. Theo 720 tia từ tâm, lấy cường độ <code>I(r)</code> của ảnh R − B (vỏ cam: I cao, nền xanh: I thấp) trong ±8% quanh mép gần đúng và tính <code>dI/dr</code>. Mép = chỗ <code>dI/dr</code> âm nhất, nội suy parabol để chính xác dưới 1 pixel.</li>
+        <li><b>Làm trơn</b>: bỏ điểm lệch khỏi trung vị trượt (chói nền, vết bẩn), khớp <code>r(θ)</code> bằng chuỗi Fourier bậc 12; đạo hàm <code>dr/dθ</code> tính giải tích từ chuỗi.</li>
+        <li><b>Tích phân</b>: đổi sang mm theo trục dài / trục ngắn (hệ số hiệu chuẩn), đưa đầu tù sang trái, rồi tính P, A, V, S như trên với <code>y(x)</code> = nửa bề rộng đo được tại x (giả định trứng tròn xoay quanh trục dài).</li>
+        <li>Khớp Hügelschäffer vào <code>y(x)</code> cho <b>w/L riêng của từng trứng</b>, so với w/L dùng chung. Chênh lệch giữa các batch phản ánh tư thế đặt trứng và sai số tách nền.</li>
+      </ul>
+      <h4>Kiểm chứng trên ảnh hiệu chuẩn</h4>
+    </div>
+    <div class="help" id="shFitBox"></div>
+  </div>
+</div>
+
+<!-- Giải thích thuật toán không giám sát -->
+<div class="modal" id="unsupModal">
+  <div class="dialog wide">
+    <div class="dlg-head"><h3>Các thuật toán học không giám sát</h3><button class="icon-btn ghost" data-close="unsupModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <div class="help explain" id="uExplain" data-i18n="help.unsup">
+        <details id="ex-intro" open><summary>Học không giám sát là gì?</summary>
+          <p>Thuật toán chỉ nhìn vào dữ liệu (phổ, quỹ đạo, đặc trưng) và <b>tự tìm cấu trúc</b>: trứng nào giống nhau, chia được thành mấy nhóm, trứng nào khác thường. Nó <b>không biết</b> nhãn Trống / Mái / Không phôi. Vì vậy cụm tìm được là "nhóm theo sự giống nhau", và có thể là theo màu/độ dày vỏ, vị trí đặt trứng, độ trôi của đèn… chứ không chắc là giới tính. Dùng để: phát hiện trứng bất thường, xem dữ liệu có tự tách nhóm không, kiểm tra hiệu ứng batch, và sau khi có nhãn thật thì xem cụm có trùng với nhãn không.</p>
+        </details>
+        <details id="ex-input"><summary>Chọn dữ liệu đầu vào</summary>
+          <ul>
+            <li><b>Phổ tại 1 batch</b>: mỗi trứng là một vector theo bước sóng. "Hình dạng" chia cho trung bình band để bỏ khác biệt độ sáng vỏ, chỉ giữ hình dạng phổ.</li>
+            <li><b>Ngày</b> = ngày lịch của lần đo tính từ ngày bắt đầu ấp (vd bắt đầu 06/10 → đo ngày 08/10 là D2). <b>Phổ 1 ngày</b> = trung bình các batch trong cùng ngày của mỗi trứng (như bài báo lấy trung bình nhiều lần đo/ngày).</li>
+            <li><b>Ghép 2 ngày</b>: nối phổ ngày A và ngày B thành một vector (S_A + S_B) — xem hai thời điểm cùng lúc.</li>
+            <li><b>Ghép 2 ngày + Δ</b>: nối S_A, S_B, ΔA = S_A − S_gốc và ΔB = S_B − S_gốc. Ví dụ A = D3, B = D4, gốc = D2: phổ D3, D4 và hiệu D3 − D2, D4 − D2. Trên đồ thị hồ sơ/loadings các khối nằm nối tiếp nhau, có tên khối ở trên.</li>
+            <li><b>Như bài báo</b> (Li et al. 2026): mỗi trứng lấy chính nó ở ngày sớm làm gốc. Nối 4 khối: S_gốc, S_sau, <b>ΔS = S_sau − S_gốc</b> và <b>R = ΔS / (S_gốc + ε)</b>. Mặc định gốc = D2, sau = D5, đại lượng T = (S − D)/(L − D) như bài báo, ε = 0.02 (với counts: 0.02 × mức counts trung vị). Phổ không làm mượt khi dùng T.</li>
+            <li><b>Min–max 0–1 (từng phổ)</b>: mỗi phổ (counts đã làm mượt) được đưa về 0–1 trong cửa sổ Trục λ, bỏ khác biệt độ sáng giữa trứng, chỉ giữ hình dạng. Áp dụng trước khi lấy trung bình ngày và trước khi tính hiệu Δ.</li>
+            <li><b>A (OD)</b> = −log10((S − D)/(L − D)) với lamp của chính batch. <b>A bỏ offset</b>: trừ trung bình A của chính phổ đó trong cửa sổ Trục λ — bỏ phần dịch đều theo bước sóng (độ dày/màu vỏ, cách đặt trứng, đèn trôi giữa các batch), chỉ giữ hình dạng hấp thụ. Nếu các đường A tách thành hai "tầng" song song, A thô sẽ phân cụm theo tầng đó; A bỏ offset cho biết còn khác biệt hình dạng nào không.</li>
+            <li><b>ΔS giữa 2 batch</b>: thay đổi của chính quả trứng từ batch A sang B (ý tưởng của bài báo) — loại phần lớn ảnh hưởng của vỏ, giữ phần do phôi phát triển.</li>
+            <li><b>Quỹ đạo theo thời gian</b>: mỗi trứng là một đường cong theo tuổi ấp (vd ΔA band) — gom các trứng "phát triển giống nhau".</li>
+            <li><b>Bảng đặc trưng</b>: các chỉ số ở bảng tab So sánh (độ sáng vỏ, tốc độ ΔA, R/NIR, λ đỉnh, PC, kích thước trứng…).</li>
+            <li><b>Chuẩn hoá biến</b> (theo cột, trên tất cả trứng): <b>z-score</b> đưa mỗi biến về trung bình 0, độ lệch chuẩn 1; <b>Min–max 0–1</b> đưa mỗi biến về khoảng 0–1 (nhạy hơn với ngoại lai); <b>Không</b> chỉ trừ trung bình, giữ nguyên thang đo — vùng có giá trị lớn sẽ chi phối. Khi số biến lớn hơn nhiều số trứng, phân cụm được làm trên các thành phần chính đầu (giữ ~95% phương sai) để bớt nhiễu.</li>
+          </ul>
+        </details>
+        <details id="ex-stab"><summary>Ổn định cụm so với tham chiếu</summary>
+          <ul>
+            <li><b>Mục đích</b>: kiểm tra khi đổi batch / ngày / cách chuẩn hoá thì các trứng có bị đổi cụm nhiều không. Nếu cụm chỉ phản ánh nhiễu đo, trứng sẽ "nhảy" cụm liên tục; cụm phản ánh đặc điểm thật của quả trứng (vỏ, phôi) thì ổn định.</li>
+            <li><b>Cách dùng</b>: chọn một cấu hình (vd phổ ngày D2), phân cụm, mở sub-tab <b>Ổn định</b> và bấm <b>Đặt làm tham chiếu</b>; sau đó đổi batch / ngày / đại lượng để xem trứng có đổi cụm không.</li>
+            <li><b>Đặt làm tham chiếu</b>: ghi lại cụm hiện tại của từng trứng (lưu trong trình duyệt theo session). Từ đó, trên mọi bản đồ <b>hình của mỗi trứng = cụm tham chiếu</b> (tròn, vuông, tam giác, thoi, …) và không đổi khi bạn chọn dữ liệu / thuật toán khác; <b>màu = cụm hiện tại</b>.</li>
+            <li>Số thứ tự cụm là tuỳ ý ở mỗi lần chạy, nên cụm hiện tại được <b>khớp</b> với cụm tham chiếu có nhiều trứng chung nhất (cùng màu = cùng cụm). Cụm không khớp được nhận số mới.</li>
+            <li><b>ARI với tham chiếu</b>: 1 = cùng cách chia, ≈ 0 = như chia ngẫu nhiên. <b>% giữ cụm</b>: tỷ lệ trứng nằm ở cụm đã khớp với cụm tham chiếu của nó. Chỉ tính trên trứng có ở cả hai lần.</li>
+            <li><b>Theo dõi theo batch &amp; ngày</b>: phân cụm lại phổ của từng batch và từng ngày (cùng đại lượng, chuẩn hoá, thuật toán, k), vẽ ARI theo tuổi ấp và bảng trứng × thời gian. Trứng có (n) lớn là trứng hay đổi cụm.</li>
+          </ul>
+        </details>
+        <details id="ex-scan"><summary>Quét theo ngày</summary>
+          <ul>
+            <li>Chạy cùng thuật toán, k, chuẩn hoá và đại lượng phổ đang chọn cho: <b>từng ngày</b>, <b>mọi cặp 2 ngày</b> (ghép), và <b>mọi bộ gốc &lt; A &lt; B</b> (ghép 2 ngày + Δ so với gốc) trong các ngày được bật.</li>
+            <li><b>Silhouette</b> cho biết dữ liệu tự chia cụm rõ đến đâu; <b>ARI / NMI</b> cho biết cụm trùng với nhóm đã gán đến đâu (cần ≥ 4 trứng đã gán, ≥ 2 nhóm).</li>
+            <li>Silhouette giữa các cấu hình chỉ so sánh tương đối (số biến khác nhau). Chọn cấu hình tốt nhất trong nhiều cấu hình cũng dễ "may mắn" khi ít trứng — giống cảnh báo ở tab Bài báo.</li>
+            <li>Mỗi cấu hình chỉ dùng trứng có đủ dữ liệu ở mọi ngày cần thiết. Click một hình / ô / thanh để mở cấu hình đó ở phần phân tích chi tiết bên trên.</li>
+          </ul>
+        </details>
+        <details id="ex-pca"><summary>PCA — phân tích thành phần chính</summary>
+          <p>Tìm các hướng (tổ hợp tuyến tính của các bước sóng) mà dữ liệu biến thiên nhiều nhất. <b>PC1</b> là hướng thay đổi lớn nhất giữa các trứng, <b>PC2</b> lớn thứ hai và vuông góc với PC1.</p>
+          <ul>
+            <li><b>% phương sai</b>: mỗi PC giải thích bao nhiêu phần khác biệt. Ví dụ PC1 = 40% nghĩa là 40% sự khác nhau giữa các trứng nằm trên một trục.</li>
+            <li><b>Loadings</b>: trọng số của từng bước sóng trong PC. Vùng loading lớn (dương hoặc âm) là vùng bước sóng tạo ra sự khác biệt đó. Nếu PC1 có loading đều cùng dấu thì đó thường là "độ sáng chung" (vỏ, đặt trứng), không phải tín hiệu sinh học.</li>
+            <li>Tuyến tính, nhanh, ổn định, giữ khoảng cách toàn cục → nên xem đầu tiên.</li>
+          </ul>
+        </details>
+        <details id="ex-embed"><summary>Bản đồ 2D: PCA, t-SNE, MDS</summary>
+          <ul>
+            <li><b>PCA</b>: chiếu lên PC1–PC2. Khoảng cách trên bản đồ có ý nghĩa thật, nhưng chỉ thấy phần phương sai của 2 PC.</li>
+            <li><b>t-SNE</b>: phi tuyến, cố giữ "ai gần ai" (láng giềng). Rất tốt để thấy cụm, nhưng <b>khoảng cách giữa các cụm và kích thước cụm không có ý nghĩa</b>, và có thể tạo ra cụm giả khi ít mẫu.</li>
+            <li><b>MDS</b>: đặt điểm sao cho khoảng cách 2D gần nhất với khoảng cách thật trong không gian nhiều chiều — trung gian giữa PCA và t-SNE.</li>
+            <li>Hai trứng gần nhau trên bản đồ = dữ liệu đầu vào giống nhau. Click một điểm để mở trứng đó.</li>
+          </ul>
+        </details>
+        <details id="ex-cluster"><summary>Phân cụm: K-Means, Gaussian Mixture, DBSCAN</summary>
+          <ul>
+            <li><b>K-Means</b>: chia thành đúng k cụm, mỗi trứng thuộc cụm có tâm gần nhất. Giả định cụm tròn, kích thước tương đương. Phải chọn k trước.</li>
+            <li><b>Gaussian Mixture (GMM)</b>: mỗi cụm là một phân bố chuẩn; cho <b>xác suất thuộc cụm</b> (cột P(cụm)) — trứng có P thấp là trứng "lưng chừng" giữa hai cụm. Cụm có thể dẹt/dài.</li>
+            <li><b>DBSCAN</b>: cụm = vùng điểm dày đặc; không cần chọn k; điểm ở vùng thưa bị gán <b>"Nhiễu"</b> (màu xám) — tiện để phát hiện ngoại lai. Tham số <b>eps</b> = bán kính láng giềng (để trống: tự chọn theo trung vị khoảng cách).</li>
+            <li><b>Hồ sơ cụm</b>: trung bình ± SD của dữ liệu đầu vào trong mỗi cụm — cho biết các cụm <b>khác nhau ở đâu</b> (vùng bước sóng nào, thời điểm nào, đặc trưng nào).</li>
+          </ul>
+        </details>
+        <details id="ex-ward"><summary>Phân cụm phân cấp (Ward) và dendrogram</summary>
+          <p>Bắt đầu với mỗi trứng là một cụm, rồi lần lượt gộp hai cụm sao cho phương sai trong cụm tăng ít nhất (tiêu chí Ward). <b>Dendrogram</b> ghi lại thứ tự gộp: chiều cao chỗ hai nhánh nối nhau là "khoảng cách" giữa chúng. Cắt ngang cây ở một độ cao (đường đỏ) sẽ ra k cụm. Một khoảng trống cao trước khi gộp gợi ý số cụm tự nhiên; các trứng nối nhau rất thấp là gần như giống hệt.</p>
+        </details>
+        <details id="ex-k"><summary>Chọn số cụm k: silhouette, elbow, BIC</summary>
+          <ul>
+            <li><b>Silhouette</b> (−1 → 1): mỗi trứng gần cụm của mình hơn cụm khác bao nhiêu. &gt; 0.5: cụm rõ; 0.25–0.5: cụm yếu; &lt; 0.25: gần như không có cấu trúc cụm thật. Chọn k có silhouette cao nhất. Cột Silhouette trong bảng: giá trị âm = trứng có lẽ bị xếp nhầm cụm.</li>
+            <li><b>Elbow (inertia)</b>: tổng bình phương khoảng cách tới tâm cụm; luôn giảm khi tăng k — chọn chỗ "gãy khuỷu tay" mà sau đó giảm chậm lại.</li>
+            <li><b>BIC</b> (của GMM): cân bằng độ khớp và độ phức tạp; thấp nhất = tốt nhất.</li>
+            <li>Với vài chục trứng, các chỉ số này dao động mạnh — nên xem chúng có đồng thuận không.</li>
+          </ul>
+        </details>
+        <details id="ex-anomaly"><summary>Phát hiện bất thường: Isolation Forest, LOF</summary>
+          <ul>
+            <li><b>Isolation Forest</b>: cắt ngẫu nhiên dữ liệu thành cây; điểm bất thường bị "cô lập" sau rất ít lần cắt → điểm cao. Nhìn toàn cục.</li>
+            <li><b>LOF (Local Outlier Factor)</b>: so mật độ quanh một trứng với mật độ quanh các láng giềng của nó. ≈ 1: bình thường; &gt; 1.5: thưa hơn hẳn láng giềng → bất thường cục bộ.</li>
+            <li>Trứng bị cả hai cùng đánh dấu (đỏ) đáng kiểm tra: có thể là trứng chết phôi/không phôi, đặt lệch khi đo, bão hoà, vỏ bất thường, hoặc lỗi ghi file. Ví dụ ở session hiện tại, 0005 và 0018 khác hẳn ở B08.</li>
+          </ul>
+        </details>
+        <details id="ex-agree"><summary>So cụm với nhóm đã gán: ARI, NMI</summary>
+          <ul>
+            <li><b>Bảng chéo</b>: mỗi ô = số trứng của nhóm (hàng) rơi vào cụm (cột). Nếu cụm phản ánh giới tính, mỗi hàng sẽ dồn vào một cột.</li>
+            <li><b>ARI</b> (Adjusted Rand Index): 1 = cụm trùng hoàn toàn với nhóm; ≈ 0 = như chia ngẫu nhiên. <b>NMI</b>: 0 → 1, mức thông tin chung giữa cụm và nhóm.</li>
+            <li>Học không giám sát thường <b>không</b> tách được giới tính ở giai đoạn sớm (tín hiệu quá nhỏ so với khác biệt vỏ); bài báo phải dùng học có giám sát với 1400 trứng. ARI thấp không có nghĩa là không có tín hiệu — chỉ là tín hiệu không phải nguồn biến thiên lớn nhất.</li>
+          </ul>
+        </details>
+    </div>
+  </div>
+</div>
+
+<!-- Nhập nhóm -->
+<div class="modal" id="importModal">
+  <div class="dialog">
+    <div class="dlg-head"><h3>Nhập nhóm trứng</h3><button class="icon-btn ghost" data-close="importModal" title="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <p class="muted small" style="margin:0 0 8px" data-i18n="import.hint">Mỗi dòng: số trứng (egg_label) và nhóm — <b>trống</b>, <b>mái</b>, <b>không phôi</b>, <b>có phôi</b> hoặc <b>xoá</b>.</p>
+    <textarea id="cImportTxt" placeholder="0 trống&#10;5, mái&#10;0012 không phôi"></textarea>
+    <div id="cImportMsg"></div>
+    <div class="dlg-foot"><span class="spacer"></span><button class="btn" data-close="importModal">Huỷ</button><button class="btn primary" id="cImportGo">Áp dụng</button></div>
+  </div>
+</div>
+
+<!-- Note viewer -->
+<div class="modal" id="noteModal"><div class="dialog"><h3 id="noteTitle"></h3><pre id="noteBody"></pre>
+  <div class="row" style="justify-content:flex-end"><button class="btn" onclick="closeModal('noteModal')">Đóng</button></div></div></div>
+
+<!-- Lightbox -->
+<div class="modal lb" id="lightbox">
+  <div class="imgs" id="lbImgs"></div>
+  <div class="bar">
+    <button class="btn" id="lbPrev">← Batch trước</button>
+    <span id="lbPos"></span>
+    <button class="btn" id="lbNext">Batch sau →</button>
+    <label>So sánh với <select id="lbCmp"><option value="">— không —</option></select></label>
+    <button class="btn" id="lbClose">Đóng (Esc)</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="busy" id="busy"><div class="box"><div class="spin"></div><div id="busyTxt">Đang phân tích…</div></div></div>
+
+<script>
+"use strict";
+i18nDom(); initLangSelect(document.getElementById("langSel"));
+// ============================================================================
+// State
+// ============================================================================
+const S = {
+  state: null, sources: [], src: null, data: null, sig: null,
+  label: null, egg: null,
+  end: localGet("end", "blunt"), mode: localGet("mode", "dA"), smooth: +localGet("smooth", 11),
+  tsBand: null, heat: localGet("heat", "dA_blunt"),
+  lbIdx: 0, lbCmp: "", newBatches: new Set(), timer: null,
+};
+function localGet(k, d) { try { return localStorage.getItem("dash." + k) ?? d; } catch { return d; } }
+function localSet(k, v) { try { localStorage.setItem("dash." + k, v); } catch {} }
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (v, d = 0) => v == null || !isFinite(v) ? "—" : Number(v).toLocaleString(LOCALE, {maximumFractionDigits: d, minimumFractionDigits: d});
+function fmtTs(ts, withDate = true) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  if (isNaN(d)) return ts;
+  const p = (n) => String(n).padStart(2, "0");
+  const t = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  return withDate ? `${p(d.getDate())}/${p(d.getMonth() + 1)} ${t}` : t;
+}
+function ageOf(ts) {
+  const st = S.data?.incubation_start; if (!ts || !st) return null;
+  return (new Date(ts) - new Date(st)) / 3.6e6;
+}
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2600); }
+async function getJSON(url) { const r = await fetch(url); const j = await r.json(); if (!r.ok) throw new Error(tMsg(j.error) || r.status); return j; }
+
+// ============================================================================
+// Colors
+// ============================================================================
+function hexToRgb(h) { h = h.replace("#", ""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); }
+function rgbToHex(c) { return "#" + c.map(v => Math.round(v).toString(16).padStart(2, "0")).join(""); }
+function rampAt(stops, t) {
+  t = Math.max(0, Math.min(1, t)); const x = t * (stops.length - 1), i = Math.min(Math.floor(x), stops.length - 2), f = x - i;
+  const a = hexToRgb(stops[i]), b = hexToRgb(stops[i + 1]); return rgbToHex(a.map((v, k) => v + (b[k] - v) * f));
+}
+function batchColor(i, n) { const stops = css("--ramp").split(",").map(s => s.trim()); return rampAt(stops, n <= 1 ? 1 : i / (n - 1)); }
+function seqScale() { const s = css("--seq").split(",").map(x => x.trim()); return s.map((c, i) => [i / (s.length - 1), c]); }
+function divScale() { return [[0, css("--div-neg")], [0.5, css("--div-mid")], [1, css("--div-pos")]]; }
+function baseLayout(extra = {}) {
+  const ink2 = css("--ink-2"), grid = css("--grid"), axis = css("--axis");
+  const ax = { gridcolor: grid, linecolor: axis, zerolinecolor: axis, tickfont: {color: ink2, size: 11}, title: {font: {color: ink2, size: 12}}, automargin: true };
+  return Object.assign({
+    paper_bgcolor: css("--surface"), plot_bgcolor: css("--surface"),
+    font: {family: css("--font"), color: css("--ink"), size: 12},
+    margin: {l: 56, r: 12, t: 8, b: 44}, hovermode: "closest",
+    hoverlabel: {bgcolor: css("--surface"), bordercolor: axis, font: {color: css("--ink")}},
+    legend: {font: {color: ink2, size: 11}, bgcolor: "rgba(0,0,0,0)"},
+    xaxis: {...ax}, yaxis: {...ax},
+  }, extra, {xaxis: {...ax, ...(extra.xaxis || {})}, yaxis: {...ax, ...(extra.yaxis || {})}});
+}
+const PCFG = {displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"], toImageButtonOptions: {format: "png", scale: 2}};
+
+// ============================================================================
+// Spectral math (client side, so switching mode is instant)
+// ============================================================================
+function smooth(arr, w) {
+  if (!arr || w <= 1) return arr;
+  const h = (w - 1) >> 1, out = new Array(arr.length);
+  for (let i = 0; i < arr.length; i++) {
+    let s = 0, n = 0;
+    for (let j = i - h; j <= i + h; j++) { const v = arr[j]; if (v != null && isFinite(v)) { s += v; n++; } }
+    out[i] = n ? s / n : null;
+  }
+  return out;
+}
+const MIN_COUNTS = 50;
+function refFor(end) { // first batch where this egg has this end
+  for (const b of S.egg.batches) if (b.ends[end]?.counts) return b;
+  return null;
+}
+function spectrumOf(b, end) {
+  if (S.mode === "raw") return b.ends[end]?.raw || null;   // đúng ADC trong file - không xử lý gì
+  const e = b.ends[end]; if (!e?.counts) return null;
+  const c = smooth(e.counts, S.smooth), L = smooth(b.lamp, S.smooth), wl = S.egg.wavelengths;
+  const Lmax = L ? Math.max(...L.filter(v => v != null && isFinite(v))) : 0;
+  const okL = (i) => L && L[i] != null && L[i] > 0.03 * Lmax;
+  switch (S.mode) {
+    case "counts": return c;
+    case "T": return c.map((v, i) => okL(i) && v != null ? v / L[i] : null);
+    case "A": return c.map((v, i) => okL(i) && v != null && v > 0 ? -Math.log10(v / L[i]) : null);
+    case "norm": {
+      const [lo, hi] = band(); let s = 0, n = 0;
+      wl.forEach((w, i) => { if (w >= lo && w <= hi && c[i] != null) { s += c[i]; n++; } });
+      const m = s / n; return c.map(v => v == null ? null : v / m);
+    }
+    case "dA": {
+      const r = refFor(end); if (!r) return null;
+      const c0 = smooth(r.ends[end].counts, S.smooth);
+      // bỏ vùng tín hiệu yếu (2 đầu dải phổ) - ở đó log tỷ số chỉ là nhiễu
+      const thr = Math.max(MIN_COUNTS, 0.04 * Math.max(...c0.filter(v => v != null && isFinite(v))));
+      return c.map((v, i) => v != null && c0[i] != null && v > thr && c0[i] > thr ? Math.log10(c0[i] / v) : null);
+    }
+  }
+}
+function bandMean(arr, lo, hi) {
+  if (!arr) return null; const wl = S.egg.wavelengths; let s = 0, n = 0;
+  for (let i = 0; i < wl.length; i++) if (wl[i] >= lo && wl[i] <= hi && arr[i] != null && isFinite(arr[i])) { s += arr[i]; n++; }
+  return n ? s / n : null;
+}
+function rawBand(arr, wl, lo, hi) {
+  let s = 0, n = 0;
+  for (let i = 0; i < wl.length; i++) if (wl[i] >= lo && wl[i] <= hi && arr[i] != null) { s += arr[i]; n++; }
+  return n ? s / n : null;
+}
+function bandValue(b, end, lo, hi) { // scalar for time series; ratios of band means (more robust than mean of ratios)
+  const e = b.ends[end]; if (!e?.counts) return null;
+  if (S.mode === "raw") return e.raw ? rawBand(e.raw, e.raw_wl || S.egg.wavelengths, lo, hi) : null;
+  const c = bandMean(e.counts, lo, hi), L = bandMean(b.lamp, lo, hi);
+  switch (S.mode) {
+    case "counts": case "norm": return c;
+    case "T": return L ? c / L : null;
+    case "A": return L && c > 0 ? -Math.log10(c / L) : null;
+    case "dA": { const r = refFor(end); if (!r) return null; const c0 = bandMean(r.ends[end].counts, lo, hi); return c > 0 && c0 > 0 ? Math.log10(c0 / c) : null; }
+  }
+}
+const MODE_LABEL = {raw: "Raw ADC", counts: t("Counts (trừ dark)"), T: "T", A: "A (OD)", norm: "Counts / mean band", dA: "ΔA (OD)"};
+const END_LABEL = {blunt: t("Tù"), pointed: t("Nhọn")};
+function band() { return [+$("bandLo").value || 604, +$("bandHi").value || 922]; }
+function ends() { return S.end === "both" ? ["blunt", "pointed"] : [S.end]; }
+
+// ============================================================================
+// Nguồn dữ liệu: chỉ có sau khi người dùng upload hoặc kết nối MongoDB
+// ============================================================================
+const enc = encodeURIComponent;
+async function postJSON(url, body) {
+  const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const j = await r.json().catch(() => ({error: r.statusText}));
+  if (!r.ok) throw new Error(tMsg(j.error) || r.status); return j;
+}
+function busy(txt) { $("busyTxt").textContent = txt || ""; $("busy").classList.toggle("open", !!txt); }
+function srcLabel(s) { return `${s.session}  ·  ${s.kind === "mongo" ? "MongoDB" : "Upload"}`; }
+function currentSrc() { return S.sources.find(s => s.id === S.src); }
+const svg = (id, cls = "ic") => `<svg class="${cls}"><use href="#i-${id}"/></svg>`;
+function openModal(id) { $(id).classList.add("open"); }
+
+function showStart() {
+  $("start").hidden = false; $("dash").hidden = true;
+  document.querySelectorAll("[data-dash]").forEach(el => el.hidden = true);
+  $("backBtn").hidden = !S.sources.length;
+  clearInterval(S.timer);
+  renderRecent(); window.scrollTo({top: 0});
+}
+function showDash() {
+  $("start").hidden = true; $("dash").hidden = false;
+  document.querySelectorAll("[data-dash]").forEach(el => el.hidden = false);
+  $("liveWrap").hidden = currentSrc()?.kind !== "mongo";
+  $("srcSel").innerHTML = S.sources.map(s => `<option value="${esc(s.id)}">${esc(srcLabel(s))}</option>`).join("");
+  $("srcSel").value = S.src; localSet("src", S.src);
+  setLive();
+}
+async function refreshState() {
+  S.state = await getJSON("/api/state");
+  S.sources = S.state.sources;
+  $("storeDir").textContent = t("Lưu vào {p}", {p: S.state.store});
+  const d = S.state.mongo_defaults || {};
+  [["mColS", "sessions"], ["mColM", "measurements"], ["mColI", "images"], ["mColB", "bucket"]].forEach(([id, k]) => $(id).placeholder = d[k] || "");
+  if (!S.state.mongo_available) { $("mMsg").innerHTML = `<div class="msg err">${esc(t("Server chưa cài pymongo (pip install pymongo)."))}</div>`; $("mTest").disabled = true; }
+}
+// Kết quả phân tích vừa trả về từ /api/open/* -> vào dashboard
+async function enterSource(summary) {
+  await refreshState();
+  S.src = summary.source.id; S.sig = null; S.newBatches.clear(); S.tsBand = null; S.egg = null; S.label = null; S.data = null;
+  showDash(); applySummary(summary, false);
+  if (S.label) await loadEgg(S.label);
+}
+function cols() {
+  const c = {sessions: $("mColS").value, measurements: $("mColM").value, images: $("mColI").value, bucket: $("mColB").value};
+  Object.keys(c).forEach(k => { if (!c[k].trim()) delete c[k]; }); return c;
+}
+async function mongoTest() {
+  $("mMsg").innerHTML = `<div class="msg">${t("Đang kết nối…")}</div>`; $("mSessions").innerHTML = "";
+  $("mTest").disabled = true;
+  try {
+    const j = await postJSON("/api/mongo/test", {uri: $("mUri").value, db: $("mDb").value, cols: cols()});
+    // nhớ URI cho lần sau nhưng KHÔNG lưu mật khẩu
+    localSet("mUri", $("mUri").value.replace(/(mongodb(?:\+srv)?:\/\/[^:/@]+):[^@]*@/, "$1@")); localSet("mDb", $("mDb").value);
+    $("mMsg").innerHTML = j.sessions.length
+      ? `<div class="label" style="margin:14px 0 6px">${esc(t("Chọn session · {db}", {db: j.db}))}</div>`
+      : `<div class="msg">${esc(t("Đã kết nối {db} nhưng chưa có session nào.", {db: j.db}))}</div>`;
+    $("mSessions").innerHTML = j.sessions.map(s => `
+      <button class="row-item" data-open-mongo="${esc(s.session)}">${svg("db")}
+        <span class="grow"><div class="t">${esc(s.session)}</div><div class="d">${t("{b} batch · {m} phép đo · {i} ảnh", {b: s.n_batches, m: s.n_measurements, i: s.n_images})}</div></span>
+        <span class="r">${fmtTs(s.last)}</span>${svg("chev", "ic chev")}</button>`).join("");
+  } catch (ex) { $("mMsg").innerHTML = `<div class="msg err">${esc(ex.message)}</div>`; }
+  finally { $("mTest").disabled = !S.state?.mongo_available; }
+}
+async function openMongo(session) {
+  busy(t("Đang phân tích {s}…", {s: session}));
+  try {
+    await enterSource(await postJSON("/api/open/mongo", {uri: $("mUri").value, db: $("mDb").value, cols: cols(), session, lo: band()[0], hi: band()[1]}));
+    closeModal("mongoModal");
+  }
+  catch (ex) { $("mMsg").innerHTML = `<div class="msg err">${esc(ex.message)}</div>`; }
+  finally { busy(); }
+}
+async function openFolder(session) {
+  busy(t("Đang phân tích session {s}…", {s: session}));
+  try { await enterSource(await postJSON("/api/open/folder", {session, lo: band()[0], hi: band()[1]})); }
+  finally { busy(); }
+}
+function renderRecent() {
+  const items = S.state?.recent || [];
+  $("recentCard").hidden = !items.length;
+  $("recentList").innerHTML = items.map((r, i) => `
+    <button class="row-item" data-recent="${i}">${svg(r.kind === "mongo" ? "db" : "folder")}
+      <span class="grow"><div class="t">${esc(r.session)}</div><div class="d">${esc(r.kind === "mongo" ? `${r.uri} / ${r.db}` : r.store)}</div></span>
+      <span class="r">${fmtTs(r.at)}</span>${svg("chev", "ic chev")}</button>`).join("");
+}
+function signature(d) { return JSON.stringify(d.batches.map(b => [b.folder, b.n_spectra, b.n_images, b.finished, b.n_warnings])); }
+
+function applySummary(d, silent) {
+  const sig = signature(d), changed = sig !== S.sig;
+  if (S.data && changed && silent) {
+    const old = new Set(S.data.batches.map(b => b.folder));
+    d.batches.forEach(b => { if (!old.has(b.folder)) S.newBatches.add(b.folder); });
+    toast(t("Có dữ liệu mới — đã cập nhật"));
+  }
+  S.data = d; S.sig = sig;
+  $("liveTxt").textContent = t("Đồng bộ") + " · " + fmtTs(d.server_time, false).slice(0, 5);
+  if (!silent || changed) {
+    renderTimeline(); renderEggList(); renderHeat();
+    if (typeof onSummary === "function") onSummary();
+    if (!S.label || !d.labels.includes(S.label)) S.label = localGet("label:" + S.src, d.labels[0]);
+    if (!d.labels.includes(S.label)) S.label = d.labels[0];
+  }
+  return !silent || changed;
+}
+async function loadSession(silent = false) {
+  if (!S.src) return;
+  const [lo, hi] = band();
+  const d = await getJSON(`/api/session?src=${enc(S.src)}&lo=${lo}&hi=${hi}`);
+  if (applySummary(d, silent) && S.label) await loadEgg(S.label);
+}
+async function loadEgg(label) {
+  S.label = label; localSet("label:" + S.src, label);
+  document.querySelectorAll(".egg").forEach(e => e.classList.toggle("on", e.dataset.label === label));
+  document.querySelector(`.egg[data-label="${CSS.escape(label)}"]`)?.scrollIntoView({block: "nearest"});
+  const j = await getJSON(`/api/egg?src=${enc(S.src)}&label=${enc(label)}`);
+  if (j.label !== S.label) return;
+  S.egg = j; renderEgg();
+}
+
+// ============================================================================
+// Render: session / timeline
+// ============================================================================
+function renderTimeline() {
+  const d = S.data, n = d.batches.length;
+  $("sessionSub").textContent = t("{n} batch · {e} trứng · bắt đầu ấp {d}", {n, e: d.labels.length, d: d.incubation_start ? fmtTs(d.incubation_start) : "?"});
+  $("timeline").innerHTML = d.batches.map((b, i) => `
+    <div class="bcard">
+      ${S.newBatches.has(b.folder) ? `<span class="new">${t("MỚI")}</span>` : ""}
+      <div class="t"><span class="sw" style="background:${batchColor(i, n)}"></span>Batch ${String(b.batch_no).padStart(2, "0")}</div>
+      <div class="num">${fmtTs(b.started)} – ${fmtTs(b.finished, false)}</div>
+      <div>${t("Tuổi ấp")} <span class="age num">${fmt(b.age_h, 1)} h</span> (${t("{d} ngày", {d: fmt(b.age_h / 24, 1)})})</div>
+      <div class="num">${t("{e} trứng · {s} phổ", {e: b.n_eggs, s: b.n_spectra})} · ${b.n_images ? t("{n} ảnh", {n: b.n_images}) : `<span class="warn">${t("{n} ảnh", {n: 0})}</span>`}</div>
+      <div class="num">Lamp peak ${fmt(b.lamp_peak)}</div>
+      ${b.notes.map(f => `<div><a class="link" data-note="${esc(b.folder)}|${esc(f)}">${svg("note")} ${esc(f.split("/").pop())}</a></div>`).join("")}
+      ${b.n_warnings ? `<div class="warn" title="${esc(b.warnings.map(tMsg).join("\n"))}">⚠ ${t("{n} cảnh báo", {n: b.n_warnings})}</div>` : ""}
+    </div>`).join("");
+  // khung batch thu gọn: tóm tắt những gì cần chú ý ngay trên dòng tiêu đề
+  const nWarn = d.batches.reduce((s, b) => s + (b.n_warnings || 0), 0), nNoImg = d.batches.filter(b => !b.n_images).length;
+  $("sessFlags").innerHTML = [
+    S.newBatches.size ? `<span class="chip" style="color:var(--good)">${t("{n} batch mới", {n: `<b style="color:inherit">${S.newBatches.size}</b>`})}</span>` : "",
+    nWarn ? `<span class="chip warn">⚠ ${t("{n} cảnh báo", {n: nWarn})}</span>` : "",
+    nNoImg ? `<span class="chip">${t("{n} batch chưa có ảnh", {n: nNoImg})}</span>` : "",
+  ].join("");
+  // lamp drift: one series -> no legend, title names it
+  const x = d.batches.map(b => b.age_h), y = d.batches.map(b => b.lamp_band);
+  Plotly.react("lampPlot", [{x, y, mode: "lines+markers", line: {color: css("--muted"), width: 2}, marker: {size: 8, color: d.batches.map((_, i) => batchColor(i, n)), line: {color: css("--surface"), width: 2}},
+    text: d.batches.map(b => `Batch ${b.batch_no}<br>${fmtTs(b.lamp_ts)}`), hovertemplate: `%{text}<br>${t("Tuổi ấp")} %{x:.1f} h<br>Lamp band %{y:,.0f}<extra></extra>`}],
+    baseLayout({margin: {l: 56, r: 12, t: 22, b: 36}, showlegend: false,
+      title: {text: `Lamp · mean ${d.band[0]}–${d.band[1]} nm`, font: {size: 12, color: css("--ink-2")}, x: 0, xanchor: "left", y: 0.98},
+      xaxis: {title: {text: t("Tuổi ấp (h)")}}, yaxis: {title: {text: "Counts"}, rangemode: "tozero"}}), {...PCFG, displayModeBar: false});
+}
+function latestImage(label) {
+  const d = S.data;
+  for (let i = d.batches.length - 1; i >= 0; i--) if (d.overview[label]?.[i]?.img_ts) return i;
+  return -1;
+}
+function renderEggList() {
+  const d = S.data, q = $("eggFilter").value.trim().toLowerCase(), nb = d.batches.length;
+  const html = d.labels.filter(l => !q || l.includes(q) || String(d.egg_ids[l] ?? "").includes(q)).map(l => {
+    const ov = d.overview[l] || [], nSpec = ov.filter(c => c.blunt != null || c.pointed != null).length, nImg = ov.filter(c => c.img_ts).length;
+    const sat = ov.some(c => c.blunt_sat || c.pointed_sat);
+    return `<button class="egg${l === S.label ? " on" : ""}" data-label="${esc(l)}">
+      <div class="noimg" data-thumb="${esc(l)}">…</div>
+      <div class="lab"><span>${typeof groupDot === "function" ? groupDot(l) : ""}${esc(l)}</span><span class="meta">id ${esc(d.egg_ids[l] ?? "?")}</span></div>
+      <div class="meta num">${t("{a}/{n} phổ · {b}/{n} ảnh", {a: nSpec, b: nImg, n: nb})}${sat ? ` · <span class="flag">${t("bão hoà")}</span>` : ""}</div></button>`;
+  }).join("");
+  $("eggList").innerHTML = html || `<div class="empty">${t("Không có trứng")}</div>`;
+  lazyThumbs();
+}
+// thumbnails of the latest image per egg, loaded when visible
+let thumbObs;
+function lazyThumbs() {
+  thumbObs?.disconnect();
+  thumbObs = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return; thumbObs.unobserve(e.target);
+    const l = e.target.dataset.thumb, i = latestImage(l);
+    if (i < 0) { e.target.textContent = t("chưa có ảnh"); return; }
+    const b = S.data.batches[i], im = new Image();
+    im.src = imgUrl({folder: b.folder, image: S.data.overview[l][i].img}, 240); im.alt = l; e.target.replaceWith(im);
+  }), {root: $("eggList"), rootMargin: "200px"});
+  document.querySelectorAll("[data-thumb]").forEach(el => thumbObs.observe(el));
+}
+function imgUrl(b, w) { return `/api/img?src=${encodeURIComponent(S.src)}&b=${encodeURIComponent(b.folder)}&k=${encodeURIComponent(b.image.key)}&w=${w}`; }
+
+// ============================================================================
+// Render: egg detail
+// ============================================================================
+function renderEgg() {
+  const e = S.egg, d = S.data, n = e.batches.length;
+  $("eggTitle").textContent = t("Trứng {l}", {l: e.label});
+  const withSpec = e.batches.filter(b => Object.keys(b.ends).length), withImg = e.batches.filter(b => b.image);
+  const sat = e.batches.some(b => Object.values(b.ends).some(x => x.saturated));
+  const last = withSpec[withSpec.length - 1];
+  $("eggSub").textContent = [`egg_id ${e.egg_id ?? "?"}`, t("{a}/{n} phổ", {a: withSpec.length, n}), t("{a}/{n} ảnh", {a: withImg.length, n}),
+    last ? t("đo cuối {ts} ({h} h)", {ts: fmtTs(last.ends.blunt?.timestamp || last.ends.pointed?.timestamp), h: fmt(last.age_h, 0)}) : ""].filter(Boolean).join(" · ");
+  $("eggChips").innerHTML = sat ? `<span class="chip flag">⚠ ${t("bão hoà")}</span>` : "";
+  renderSpec(); renderTS(); renderMap(); renderGallery(); renderTable();
+  if (typeof eggGroupHook === "function") eggGroupHook();
+  if (typeof shapeEggHook === "function") shapeEggHook();
+}
+
+function renderSpec() {
+  const e = S.egg, n = e.batches.length, wl = e.wavelengths, traces = [];
+  ends().forEach(end => e.batches.forEach((b, i) => {
+    const y = spectrumOf(b, end); if (!y) return;
+    const ts = b.ends[end].timestamp;
+    traces.push({x: (S.mode === "raw" && b.ends[end].raw_wl) || wl, y, type: "scattergl", mode: "lines", name: `B${String(b.batch_no).padStart(2, "0")} · ${fmt(b.age_h, 0)} h${S.end === "both" ? " · " + END_LABEL[end] : ""}`,
+      legendgroup: b.folder, line: {color: batchColor(i, n), width: 2, dash: end === "pointed" && S.end === "both" ? "dash" : "solid"},
+      hovertemplate: `B${b.batch_no} ${END_LABEL[end]} · ${fmtTs(ts)} · ${fmt(ageOf(ts) ?? b.age_h, 1)} h<br>%{x:.0f} nm: %{y:.4g}<extra></extra>`});
+  }));
+  if (S.mode === "counts" && S.end !== "both") {
+    // lamp of the latest batch as reference shape (muted, dotted) - not for both-ends view to keep legend short
+    const lb = [...e.batches].reverse().find(b => b.lamp);
+    if (lb) traces.push({x: wl, y: smooth(lb.lamp, S.smooth), type: "scattergl", mode: "lines", name: `Lamp B${lb.batch_no}`, visible: "legendonly",
+      line: {color: css("--s-lamp"), width: 1.5, dash: "dot"}, hovertemplate: "Lamp %{x:.0f} nm: %{y:,.0f}<extra></extra>"});
+  }
+  const isRaw = S.mode === "raw";
+  if (isRaw) [["dark_raw", "Dark", "dash"], ["lamp_raw", "Lamp", "dot"]].forEach(([k, nm, dash]) => {
+    let first = true;   // dark & lamp gốc của từng batch - bật/tắt cả nhóm ở chú thích
+    e.batches.forEach((b, i) => { if (!b[k]) return;
+      traces.push({x: b[k + "_wl"] || wl, y: b[k], type: "scattergl", mode: "lines", name: nm, legendgroup: nm, showlegend: first, visible: "legendonly",
+        line: {color: batchColor(i, n), width: 1, dash}, hovertemplate: `${nm} B${b.batch_no}: %{y:,.0f}<extra>%{x:.0f} nm</extra>`}); first = false; });
+  });
+  const [lo, hi] = band(), tb = S.tsBand || [lo, hi];
+  const yr = isRaw ? null : robustRange(traces.filter(t => t.name && !t.name.startsWith("Lamp")), +$("xLo").value, +$("xHi").value);
+  const shapes = [{type: "rect", xref: "x", yref: "paper", x0: tb[0], x1: tb[1], y0: 0, y1: 1, fillcolor: css("--accent"), opacity: 0.07, line: {width: 0}}];
+  if (S.mode === "dA") shapes.push({type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: {color: css("--axis"), width: 1}});
+  $("specSub").innerHTML = `${isRaw ? `<span class="raw-badge">RAW</span> ` : ""}${esc(MODE_LABEL[S.mode])} · ${S.end === "both" ? t("tù (liền) & nhọn (đứt)") : END_LABEL[S.end]}${S.mode === "dA" ? " · " + t("tham chiếu = batch đầu có dữ liệu") : ""}`;
+  Plotly.react("specPlot", traces.length ? traces : [], baseLayout({
+    hovermode: "closest", shapes,
+    xaxis: {title: {text: t("Bước sóng (nm)")}, ...(isRaw ? {autorange: true} : {range: [+$("xLo").value, +$("xHi").value]})},
+    yaxis: {title: {text: MODE_LABEL[S.mode]}, ...(yr ? {range: yr} : {autorange: true})},
+    legend: {groupclick: "togglegroup", orientation: "v", x: 1.01, y: 1, font: {size: 11, color: css("--ink-2")}},
+    margin: {l: 60, r: 8, t: 8, b: 44},
+    annotations: traces.length ? [] : [{text: t("Không có phổ cho trứng này"), showarrow: false, xref: "paper", yref: "paper", x: .5, y: .5, font: {color: css("--muted")}}],
+  }), PCFG);
+  const el = $("specPlot");
+  el.removeAllListeners?.("plotly_click");
+  el.on("plotly_click", ev => { const x = ev.points?.[0]?.x; if (x == null) return; S.tsBand = [Math.round(x) - 5, Math.round(x) + 5]; renderTS(); renderSpec(); });
+}
+
+function robustRange(traces, x0, x1) { // 1-99 percentile trong cửa sổ λ, để vài điểm nhiễu không bóp méo trục
+  const v = [];
+  traces.forEach(t => t.x.forEach((x, i) => { const y = t.y[i]; if (x >= x0 && x <= x1 && y != null && isFinite(y)) v.push(y); }));
+  if (v.length < 20) return null;
+  v.sort((a, b) => a - b);
+  const lo = v[Math.floor(v.length * 0.01)], hi = v[Math.ceil(v.length * 0.99) - 1], pad = (hi - lo) * 0.08 || Math.abs(hi) * 0.1 || 1;
+  return [lo - pad, hi + pad];
+}
+
+function renderTS() {
+  const e = S.egg, [lo, hi] = S.tsBand || band(), traces = [];
+  const color = {blunt: css("--s-blunt"), pointed: css("--s-pointed")};
+  ends().forEach(end => {
+    const pts = e.batches.map(b => ({b, v: bandValue(b, end, lo, hi), ts: b.ends[end]?.timestamp})).filter(p => p.v != null);
+    traces.push({x: pts.map(p => ageOf(p.ts) ?? p.b.age_h), y: pts.map(p => p.v), mode: "lines+markers", name: END_LABEL[end],
+      line: {color: color[end], width: 2}, marker: {size: 9, color: color[end], line: {color: css("--surface"), width: 2}},
+      customdata: pts.map(p => [p.b.batch_no, fmtTs(p.ts), p.b.ends[end].peak_adc, p.b.ends[end].saturated ? "⚠ " + t("bão hoà") : ""]),
+      hovertemplate: `${END_LABEL[end]} · B%{customdata[0]} · %{customdata[1]}<br>${t("Tuổi ấp")} %{x:.1f} h<br>${MODE_LABEL[S.mode]}: %{y:.4g}<br>peak ADC %{customdata[2]:,} %{customdata[3]}<extra></extra>`});
+  });
+  const label = S.mode === "norm" ? t("Counts (trừ dark)") : MODE_LABEL[S.mode];
+  $("tsChips").innerHTML = S.tsBand
+    ? `<span class="chip x" id="tsReset" title="${esc(t("Bỏ chọn, quay về band chung"))}">λ ${lo}–${hi} nm ✕</span>`
+    : `<span class="chip">band ${lo}–${hi} nm</span>`;
+  $("tsReset")?.addEventListener("click", () => { S.tsBand = null; renderTS(); renderSpec(); });
+  Plotly.react("tsPlot", traces, baseLayout({
+    hovermode: "closest", showlegend: traces.length > 1,
+    legend: {orientation: "h", x: 0, y: 1.08},
+    xaxis: {title: {text: t("Tuổi ấp (h)")}}, yaxis: {title: {text: label}},
+    margin: {l: 60, r: 12, t: 26, b: 44},
+    shapes: S.mode === "dA" ? [{type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: {color: css("--axis"), width: 1}}] : [],
+  }), PCFG);
+}
+
+function renderMap() {
+  if ($("pMap").hidden || !S.egg) return;
+  const e = S.egg, end = S.end === "both" ? "blunt" : S.end, wl = e.wavelengths;
+  const isRaw = S.mode === "raw";
+  const x0 = isRaw ? -Infinity : +$("xLo").value, x1 = isRaw ? Infinity : +$("xHi").value;
+  const idx = wl.map((w, i) => w >= x0 && w <= x1 ? i : -1).filter(i => i >= 0);
+  const rows = e.batches.map(b => ({b, y: spectrumOf(b, end)})).filter(r => r.y);
+  const z = rows.map(r => idx.map(i => r.y[i]));
+  const yl = rows.map(r => `B${String(r.b.batch_no).padStart(2, "0")} · ${fmt(r.b.age_h, 0)} h`);
+  const diverging = S.mode === "dA";
+  // thang màu theo phân vị 98% của |z| để vài điểm nhiễu ở mép không làm nhạt cả bản đồ
+  const av = z.flat().filter(v => v != null && isFinite(v)).map(Math.abs).sort((a, b) => a - b);
+  const zmax = av.length ? av[Math.floor(av.length * 0.98)] || av[av.length - 1] : 1;
+  $("mapSub").textContent = `${MODE_LABEL[S.mode]} · ${END_LABEL[end]}${S.end === "both" ? " " + t("(chọn Tù/Nhọn để đổi)") : ""}`;
+  Plotly.react("mapPlot", rows.length ? [{type: "heatmap", x: idx.map(i => wl[i]), y: yl, z,
+    colorscale: diverging ? divScale() : seqScale(), zmid: diverging ? 0 : undefined,
+    zmin: diverging ? -zmax : undefined, zmax: diverging ? zmax : undefined,
+    colorbar: {thickness: 10, outlinewidth: 0, tickfont: {color: css("--ink-2"), size: 11}},
+    hovertemplate: "%{y}<br>%{x:.0f} nm: %{z:.4g}<extra></extra>", xgap: 0, ygap: 2}] : [],
+    baseLayout({xaxis: {title: {text: t("Bước sóng (nm)")}}, yaxis: {autorange: "reversed", type: "category"}, margin: {l: 90, r: 8, t: 8, b: 44}}), PCFG);
+}
+
+function renderGallery() {
+  const e = S.egg, n = e.batches.length;
+  $("gallery").innerHTML = e.batches.map((b, i) => {
+    const specTs = b.ends.blunt?.timestamp || b.ends.pointed?.timestamp;
+    const dt = b.image && specTs ? (new Date(b.image.ts) - new Date(specTs)) / 60000 : null;
+    return `<button class="shot" data-i="${i}" ${b.image ? "" : "disabled"}>
+      <div class="bar" style="background:${batchColor(i, n)}"></div>
+      ${b.image ? `<img loading="lazy" src="${imgUrl(b, 480)}" alt="${esc(t("Trứng {l}", {l: e.label}))} batch ${b.batch_no}">` : `<div class="noimg">Batch ${b.batch_no}: ${t("chưa có ảnh")}</div>`}
+      <div class="cap"><b>Batch ${String(b.batch_no).padStart(2, "0")}</b> · ${fmt(b.image ? ageOf(b.image.ts) ?? b.age_h : b.age_h, 1)} h<br>
+        <span class="num">${t("Ảnh")}: ${b.image ? fmtTs(b.image.ts) : "—"}</span><br>
+        <span class="num">${t("Phổ")}: ${fmtTs(specTs)}${dt != null ? ` (${t("ảnh {d} phút", {d: (dt >= 0 ? "+" : "") + fmt(dt, 1)})})` : ""}</span></div>
+    </button>`;
+  }).join("");
+}
+
+function renderTable() {
+  const e = S.egg, rows = [];
+  e.batches.forEach(b => ["blunt", "pointed"].forEach(end => {
+    const m = b.ends[end]; if (!m) return;
+    rows.push(`<tr><td>B${String(b.batch_no).padStart(2, "0")}</td><td>${END_LABEL[end]}</td><td class="num">${fmtTs(m.timestamp)}</td>
+      <td class="num">${fmt(m.incubation_age_h, 2)}</td><td class="num">${fmt(m.exposure_ms)}</td><td class="num">${fmt(m.peak_adc)}</td>
+      <td>${m.saturated ? `<span class="flag">${t("có")} (${fmt(m.saturated_pixels)})</span>` : t("không")}</td>
+      <td class="num">${fmt(m.color_ratio, 3)}</td><td class="num">${fmt(m.invalid_pct, 1)}</td><td class="num">${fmt(m.frame_rsd_pct, 2)}</td>
+      <td class="num">${m.n_repeats > 1 ? `<span class="flag">${m.n_repeats}</span>` : 1}</td>
+      <td class="num">${fmt(bandValue(b, end, ...band()), 4)}</td>
+      <td class="num">${b.image ? fmtTs(b.image.ts) : "—"}</td><td title="${esc(m.file)}">${esc(m.file)}</td></tr>`);
+  }));
+  $("measTable").innerHTML = `<thead><tr><th>Batch</th><th>${t("Đầu")}</th><th>${t("Thời điểm đo")}</th><th>${t("Tuổi ấp (h)")}</th><th>Exposure (ms)</th><th>Peak ADC</th><th>${t("Bão hoà")}</th>
+    <th>Color ratio</th><th>Invalid %</th><th>Frame RSD %</th><th>${t("Số lần đo")}</th><th>${MODE_LABEL[S.mode]} (band)</th><th>${t("Ảnh lúc")}</th><th style="text-align:left">File</th></tr></thead><tbody>${rows.join("")}</tbody>`;
+}
+
+// ============================================================================
+// Render: overview heatmap (all eggs x batches)
+// ============================================================================
+function renderHeat() {
+  const d = S.data; if (!d || $("pHeat").hidden) return;
+  const [kind, end] = S.heat.split("_");
+  const z = d.labels.map(l => d.batches.map((b, i) => {
+    const c = d.overview[l]?.[i]?.[kind === "r" ? end + "_raw" : end];
+    if (c == null) return null;
+    if (kind === "c" || kind === "r") return c;
+    if (kind === "T") return b.lamp_band ? c / b.lamp_band : null;
+    const ref = (d.overview[l] || []).find(x => x[end] != null)?.[end];
+    return ref > 0 && c > 0 ? Math.log10(ref / c) : null;
+  }));
+  const x = d.batches.map(b => `B${String(b.batch_no).padStart(2, "0")}<br>${fmt(b.age_h, 0)} h`);
+  const div = kind === "dA"; let m = 0; z.flat().forEach(v => { if (v != null) m = Math.max(m, Math.abs(v)); });
+  Plotly.react("heatPlot", [{type: "heatmap", x, y: d.labels, z, xgap: 2, ygap: 2,
+    colorscale: div ? divScale() : seqScale(), zmid: div ? 0 : undefined, zmin: div ? -m : undefined, zmax: div ? m : undefined,
+    colorbar: {thickness: 10, outlinewidth: 0, tickfont: {color: css("--ink-2"), size: 11}},
+    hovertemplate: `${t("Trứng {l}", {l: "%{y}"})} · %{x}<br>%{z:.4g}<extra></extra>`, hoverongaps: false}],
+    baseLayout({yaxis: {autorange: "reversed", type: "category", tickfont: {size: 10, color: css("--ink-2")}}, xaxis: {side: "top", type: "category"}, margin: {l: 48, r: 8, t: 40, b: 8}}), PCFG);
+  const el = $("heatPlot"); el.removeAllListeners?.("plotly_click");
+  el.on("plotly_click", ev => { const l = ev.points?.[0]?.y; if (l) { loadEgg(l); window.scrollTo({top: 0, behavior: "smooth"}); } });
+}
+
+// ============================================================================
+// Lightbox
+// ============================================================================
+function openLightbox(i) {
+  S.lbIdx = i;
+  const sel = $("lbCmp");
+  sel.innerHTML = `<option value="">${t("— không —")}</option>` + S.egg.batches.map((b, k) => b.image ? `<option value="${k}">Batch ${b.batch_no} · ${fmtTs(b.image.ts)}</option>` : "").join("");
+  sel.value = S.lbCmp && S.egg.batches[+S.lbCmp]?.image ? S.lbCmp : "";
+  $("lightbox").classList.add("open"); renderLightbox();
+}
+function figure(b) {
+  return `<figure><div class="frame"><img src="${imgUrl(b, 1920)}" alt=""></div>
+    <figcaption>${esc(t("Trứng {l}", {l: S.egg.label}))} · <b>Batch ${b.batch_no}</b> · ${fmtTs(b.image.ts)} · ${t("{h} h ấp", {h: fmt(ageOf(b.image.ts) ?? b.age_h, 1)})} · ${esc(b.image.file)}</figcaption></figure>`;
+}
+function renderLightbox() {
+  const bs = S.egg.batches, b = bs[S.lbIdx], c = $("lbCmp").value;
+  $("lbImgs").innerHTML = (c !== "" && +c !== S.lbIdx ? figure(bs[+c]) : "") + figure(b);
+  const withImg = bs.map((x, k) => x.image ? k : -1).filter(k => k >= 0);
+  $("lbPos").textContent = `${withImg.indexOf(S.lbIdx) + 1}/${withImg.length}`;
+  $("lbImgs").querySelectorAll("img").forEach(im => im.addEventListener("click", ev => {
+    const r = im.getBoundingClientRect();
+    im.style.transformOrigin = `${(ev.clientX - r.left) / r.width * 100}% ${(ev.clientY - r.top) / r.height * 100}%`;
+    $("lbImgs").querySelectorAll("img").forEach(o => { o.style.transformOrigin = im.style.transformOrigin; o.classList.toggle("zoom"); });
+  }));
+}
+function lbStep(dir) {
+  const bs = S.egg.batches; let k = S.lbIdx;
+  do { k += dir; } while (k >= 0 && k < bs.length && !bs[k].image);
+  if (k >= 0 && k < bs.length) { S.lbIdx = k; renderLightbox(); }
+}
+
+// ============================================================================
+// Upload -> lưu vào thư mục store -> phân tích session đó
+// ============================================================================
+let upPlan = null, upTargets = [], upFiles = [];   // upFiles: [{f: File, rel: "top/…/name"}]
+async function openUpload() {
+  const j = await getJSON("/api/upload_targets"); upTargets = j.sessions;
+  const cur = currentSrc();
+  $("upSess").innerHTML = upTargets.map(s => `<option>${esc(s.name)}</option>`).join("") + `<option value="__new">${t("Session mới…")}</option>`;
+  $("upSess").value = cur?.kind === "folder" && upTargets.some(s => s.name === cur.session) ? cur.session : "__new";
+  $("upNewSess").hidden = $("upSess").value !== "__new";
+  const bs = cur?.kind === "folder" ? S.data?.batches || [] : [];
+  $("upBatch").innerHTML = bs.map(b => `<option>${esc(b.folder)}</option>`).join("");
+  $("upBatch").value = [...bs].reverse().find(b => !b.n_images)?.folder || bs.at(-1)?.folder || "";
+  upFiles = []; $("upInput").value = ""; $("upProg").style.width = 0; $("upStatus").textContent = "";
+  buildPlan(); openModal("upModal");
+}
+// Kéo-thả thư mục: duyệt FileSystemEntry để có đường dẫn tương đối như webkitRelativePath
+async function filesFromDrop(dt) {
+  const out = [], walk = async (entry, path) => {
+    if (entry.isFile) { const f = await new Promise((ok, no) => entry.file(ok, no)); out.push({f, rel: path + f.name}); return; }
+    const rd = entry.createReader();
+    for (;;) {
+      const batch = await new Promise((ok, no) => rd.readEntries(ok, no));
+      if (!batch.length) break;
+      for (const e of batch) await walk(e, path + entry.name + "/");
+    }
+  };
+  for (const it of [...dt.items]) { const e = it.webkitGetAsEntry?.(); if (e) await walk(e, ""); }
+  return out;
+}
+function buildPlan() {
+  const skipZip = $("upSkipZip").checked, files = upFiles;
+  $("upSummary").hidden = !files.length; $("upWarn").hidden = true;
+  if (!files.length) { upPlan = null; $("upGo").disabled = true; return; }
+  const rel = (x) => x.rel.replace(/\\/g, "/");
+  const top = rel(files[0]).split("/")[0];
+  const isBatch = (s) => /^batch_\d+/i.test(s);
+  const keep = files.filter(({f}) => { const n = f.name.toLowerCase(); return !(skipZip && n.endsWith(".zip")) && !n.startsWith(".") && n !== "thumbs.db" && n !== "desktop.ini"; });
+  let kind, items;
+  const second = new Set(files.map(x => rel(x).split("/")[1]));
+  if (files.some(x => rel(x) === top + "/session_info.json") || [...second].some(isBatch) && !isBatch(top)) {
+    kind = "session"; items = keep.map(x => ({f: x.f, path: rel(x).split("/").slice(1).join("/")}));
+  } else if (isBatch(top)) {
+    kind = "batch"; items = keep.map(x => ({f: x.f, path: rel(x)}));
+  } else {
+    kind = "images"; items = keep.map(x => ({f: x.f, sub: rel(x)}));
+  }
+  const isImg = kind === "images";
+  $("upSessLbl").hidden = $("upSessRow").hidden = kind === "session";
+  $("upBatchLbl").hidden = $("upBatch").hidden = !isImg;
+  const tgtSess = kind === "session" ? top : ($("upSess").value === "__new" ? $("upNewSess").value.trim() : $("upSess").value);
+  if (isImg) items.forEach(it => it.path = `${$("upBatch").value}/${it.sub}`);
+  const bytes = items.reduce((s, it) => s + it.f.size, 0);
+  const nImg = items.filter(it => /\.(bmp|png|jpe?g|tiff?)$/i.test(it.f.name)).length, nCsv = items.filter(it => /\.csv$/i.test(it.f.name)).length;
+  $("upKind").textContent = {session: "Session", batch: "Batch", images: t("Ảnh")}[kind];
+  $("upTop").textContent = top;
+  $("upCounts").textContent = t("{f} file · {c} CSV · {i} ảnh · {mb} MB", {f: items.length, c: nCsv, i: nImg, mb: (bytes / 1048576).toFixed(1)}) + (files.length > keep.length ? " · " + t("bỏ qua {n}", {n: files.length - keep.length}) : "");
+  $("upDest").textContent = `${tgtSess || "…"}/${isImg ? $("upBatch").value + "/" + top : kind === "batch" ? top : ""}` + (tgtSess && !upTargets.some(s => s.name === tgtSess) ? "  (" + t("mới") + ")" : "");
+  $("upPlan").textContent = items.slice(0, 200).map(it => it.path).join("\n") + (items.length > 200 ? `\n… +${items.length - 200}` : "");
+  if (isImg && !$("upBatch").value) { $("upWarn").hidden = false; $("upWarn").textContent = t("Thư mục ảnh chỉ gắn được vào một session upload đang mở."); }
+  upPlan = {items, session: tgtSess, kind};
+  $("upGo").disabled = !tgtSess || !items.length || (isImg && !$("upBatch").value);
+}
+async function doUpload() {
+  const {items, session} = upPlan; if (!items.length) return;
+  $("upGo").disabled = true; let done = 0;
+  const res = {saved: 0, exists: 0, conflict: 0, error: 0}, errs = [];
+  const ow = $("upOverwrite").checked;
+  // hỏi trước file nào server đã có (cùng kích thước) để khỏi gửi lại hàng trăm MB ảnh
+  let queue = [...items];
+  if (!ow) {
+    $("upStatus").textContent = t("Đang kiểm tra…");
+    const {existing} = await postJSON("/api/upload/check", {session, files: items.map(it => ({path: it.path, size: it.f.size}))});
+    const have = new Set(existing); queue = items.filter(it => !have.has(it.path));
+    res.exists = items.length - queue.length; done = res.exists;
+  }
+  const total = items.length;
+  const show = () => { $("upProg").style.width = (done / total * 100) + "%";
+    $("upStatus").textContent = `${done}/${total} · ${t("mới {n}", {n: res.saved})} · ${t("đã có {n}", {n: res.exists})}${res.conflict ? " · " + t("xung đột {n}", {n: res.conflict}) : ""}${res.error ? " · " + t("lỗi {n}", {n: res.error}) : ""}`; };
+  show();
+  async function worker() {
+    while (queue.length) {
+      const it = queue.shift();
+      try {
+        const r = await fetch(`/api/upload?s=${enc(session)}&path=${enc(it.path)}${ow ? "&overwrite=1" : ""}`, {method: "PUT", body: it.f});
+        const j = await r.json();
+        if (r.ok) res[j.status]++; else { res[j.status === "conflict" ? "conflict" : "error"]++; errs.push(`${it.path}: ${j.error}`); }
+      } catch (ex) { res.error++; errs.push(`${it.path}: ${ex}`); }
+      done++; show();
+    }
+  }
+  await Promise.all([worker(), worker(), worker()]);
+  if (errs.length) {
+    $("upWarn").hidden = false; $("upWarn").textContent = t("{n} file lỗi / xung đột — xem danh sách bên dưới.", {n: errs.length});
+    $("upPlan").textContent = errs.slice(0, 60).join("\n"); $("upPlan").closest("details").open = true; $("upGo").disabled = false;
+  }
+  if (res.saved + res.exists === 0) { toast(t("Không tải được file nào")); return; }
+  if (!errs.length) closeModal("upModal");
+  try { await openFolder(session); toast(t("Đã tải {n} file mới · đã phân tích", {n: res.saved})); }
+  catch (ex) { toast(t("Lỗi phân tích: ") + ex.message); }
+}
+
+// ============================================================================
+// Events
+// ============================================================================
+function closeModal(id) { $(id).classList.remove("open"); }
+function stepEgg(dir) {
+  const ls = [...document.querySelectorAll(".egg")].map(e => e.dataset.label); if (!ls.length) return;
+  const i = ls.indexOf(S.label); loadEgg(ls[Math.max(0, Math.min(ls.length - 1, (i < 0 ? 0 : i) + dir))]);
+}
+function setLive() {
+  clearInterval(S.timer);
+  // chỉ nguồn MongoDB mới đồng bộ định kỳ; nguồn upload chỉ đổi khi bạn tải thêm
+  const on = $("liveChk").checked && currentSrc()?.kind === "mongo" && !$("dash").hidden;
+  $("liveDot").classList.toggle("on", on); localSet("live", $("liveChk").checked ? "1" : "0");
+  if (on) S.timer = setInterval(() => loadSession(true).catch(() => {}), 15000);
+}
+function rerenderEgg() { if (S.egg) { renderSpec(); renderTS(); renderMap(); renderTable(); } }
+
+$("srcSel").addEventListener("change", async e => {
+  S.src = e.target.value; S.sig = null; S.newBatches.clear(); S.tsBand = null; S.label = null; S.data = null;
+  showDash(); busy(t("Đang phân tích…")); try { await loadSession(); } finally { busy(); }
+});
+["bandLo", "bandHi"].forEach(id => $(id).addEventListener("change", () => { localSet(id, $(id).value); S.tsBand = null; loadSession(); }));
+["xLo", "xHi"].forEach(id => $(id).addEventListener("change", () => { localSet(id, $(id).value); rerenderEgg(); if (S.tab !== "egg") refreshTab(); }));
+$("refreshBtn").addEventListener("click", async () => { S.sig = null; if (typeof SH !== "undefined") SH.key = null; busy(t("Đang phân tích lại…")); try { await loadSession(); toast(t("Đã phân tích lại")); } finally { busy(); } });
+$("closeSrcBtn").addEventListener("click", async () => {
+  await postJSON("/api/close", {src: S.src}); await refreshState();
+  S.src = S.sources[0]?.id || null; S.data = null; S.egg = null; S.sig = null; S.label = null;
+  if (S.src) { showDash(); await loadSession(); } else showStart();
+});
+$("addSrcBtn").addEventListener("click", showStart);
+$("backBtn").addEventListener("click", () => { if (S.src) showDash(); });
+$("tileUpload").addEventListener("click", openUpload);
+$("tileMongo").addEventListener("click", () => { openModal("mongoModal"); $("mUri").focus(); });
+$("helpBtn").addEventListener("click", () => openModal("helpModal"));
+$("dropZone").addEventListener("click", () => $("upInput").click());
+$("dropZone").addEventListener("dragover", e => { e.preventDefault(); $("dropZone").classList.add("over"); });
+$("dropZone").addEventListener("dragleave", () => $("dropZone").classList.remove("over"));
+$("dropZone").addEventListener("drop", async e => {
+  e.preventDefault(); $("dropZone").classList.remove("over");
+  upFiles = await filesFromDrop(e.dataTransfer); buildPlan();
+});
+$("upInput").addEventListener("change", () => { upFiles = [...$("upInput").files].map(f => ({f, rel: f.webkitRelativePath || f.name})); buildPlan(); });
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-close]"); if (c) return closeModal(c.dataset.close);
+  if (e.target.classList?.contains("modal") && e.target.id !== "lightbox") closeModal(e.target.id);
+});
+$("mTest").addEventListener("click", mongoTest);
+$("mSessions").addEventListener("click", e => { const b = e.target.closest("[data-open-mongo]"); if (b) openMongo(b.dataset.openMongo); });
+$("recentList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-recent]"); if (!b) return;
+  const r = S.state.recent[+b.dataset.recent];
+  if (r.kind === "folder") { try { await openFolder(r.session); } catch (ex) { toast(t("Lỗi: ") + ex.message); } return; }
+  const masked = r.uri.includes(":***@");
+  $("mUri").value = masked ? r.uri.replace(":***@", ":@") : r.uri; $("mDb").value = r.db;
+  const c = r.cols || {}; $("mColS").value = c.sessions || ""; $("mColM").value = c.measurements || ""; $("mColI").value = c.images || ""; $("mColB").value = c.bucket || "";
+  $("mSessions").innerHTML = "";
+  $("mMsg").innerHTML = masked ? `<div class="msg">${t("Nhập lại mật khẩu trong URI.")}</div>` : "";
+  openModal("mongoModal"); $("mUri").focus();
+});
+$("liveChk").addEventListener("change", setLive);
+$("eggFilter").addEventListener("input", renderEggList);
+$("eggList").addEventListener("click", e => { const b = e.target.closest(".egg"); if (b) loadEgg(b.dataset.label); });
+$("prevEgg").addEventListener("click", () => stepEgg(-1));
+$("nextEgg").addEventListener("click", () => stepEgg(1));
+$("endSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.end = b.dataset.v; localSet("end", S.end); syncControls(); rerenderEgg(); });
+$("modeSel").addEventListener("change", e => { S.mode = e.target.value; localSet("mode", S.mode); rerenderEgg(); });
+$("smoothSel").addEventListener("change", e => { S.smooth = +e.target.value; localSet("smooth", S.smooth); rerenderEgg(); if (S.tab !== "egg") refreshTab(); });
+$("heatSel").addEventListener("change", e => { S.heat = e.target.value; localSet("heat", S.heat); renderHeat(); });
+$("gallery").addEventListener("click", e => { const b = e.target.closest(".shot"); if (b && !b.disabled) openLightbox(+b.dataset.i); });
+$("timeline").addEventListener("click", async e => {
+  const a = e.target.closest("[data-note]"); if (!a) return;
+  const [b, f] = a.dataset.note.split("|");
+  $("noteTitle").textContent = `${b} / ${f}`; $("noteBody").textContent = "…"; $("noteModal").classList.add("open");
+  $("noteBody").textContent = await (await fetch(`/api/note?src=${enc(S.src)}&b=${enc(b)}&f=${enc(f)}`)).text();
+});
+$("lbPrev").addEventListener("click", () => lbStep(-1));
+$("lbNext").addEventListener("click", () => lbStep(1));
+$("lbClose").addEventListener("click", () => closeModal("lightbox"));
+$("lbCmp").addEventListener("change", e => { S.lbCmp = e.target.value; renderLightbox(); });
+$("upSess").addEventListener("change", () => { $("upNewSess").hidden = $("upSess").value !== "__new"; buildPlan(); });
+["upNewSess", "upBatch", "upSkipZip"].forEach(id => $(id).addEventListener("input", buildPlan));
+$("upBatch").addEventListener("change", buildPlan);
+$("upGo").addEventListener("click", doUpload);
+$("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  document.documentElement.dataset.theme = cur === "dark" ? "light" : "dark"; localSet("theme", document.documentElement.dataset.theme);
+  if (S.data && !$("dash").hidden) { renderTimeline(); renderHeat(); if (S.egg) renderEgg(); }
+});
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, select, textarea")) return;
+  if ($("lightbox").classList.contains("open")) {
+    if (e.key === "ArrowLeft") lbStep(-1); else if (e.key === "ArrowRight") lbStep(1); else if (e.key === "Escape") closeModal("lightbox");
+    return;
+  }
+  if (e.key === "Escape") { document.querySelectorAll(".modal.open").forEach(m => closeModal(m.id)); closePops(); return; }
+  if ($("dash").hidden || S.tab !== "egg") return;
+  if (e.key === "ArrowDown") { e.preventDefault(); stepEgg(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); stepEgg(-1); }
+  else if (e.key === "r" || e.key === "R") $("refreshBtn").click();
+});
+function setSub(k) {
+  S.sub = k; localSet("sub", k);
+  document.querySelectorAll("#subTabs button").forEach(b => b.classList.toggle("on", b.dataset.sub === k));
+  document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== k);
+  document.querySelectorAll(".subhead [data-for]").forEach(el => el.hidden = el.dataset.for !== k);
+  if (k === "map") renderMap(); else if (k === "heat") renderHeat(); else if (k === "meas" && S.egg) renderTable();
+}
+$("subTabs").addEventListener("click", e => { const b = e.target.closest("[data-sub]"); if (b) setSub(b.dataset.sub); });
+$("sessCard").addEventListener("toggle", () => { localSet("sessOpen", $("sessCard").open ? "1" : "0"); if ($("sessCard").open && S.data) Plotly.Plots.resize("lampPlot"); });
+// popover tuỳ chọn: nút [data-pop] mở/đóng khung .pop tương ứng, click ra ngoài thì đóng
+function closePops(except) { document.querySelectorAll(".pop").forEach(p => { if (p !== except) p.hidden = true; }); }
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-pop]");
+  if (b) { const p = $(b.dataset.pop); closePops(p); p.hidden = !p.hidden; return; }
+  if (!e.target.closest(".pop")) closePops();
+});
+function syncControls() {
+  document.querySelectorAll("#endSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === S.end));
+  $("modeSel").value = S.mode; $("smoothSel").value = String(S.smooth); $("heatSel").value = S.heat;
+}
+
+(async function init() {
+  const th = localGet("theme", ""); if (th) document.documentElement.dataset.theme = th;
+  ["bandLo", "bandHi", "xLo", "xHi"].forEach(id => { const v = localGet(id, ""); if (v) $(id).value = v; });
+  const mu = localGet("mUri", ""), md = localGet("mDb", ""); if (mu) $("mUri").value = mu; if (md) $("mDb").value = md;
+  $("liveChk").checked = localGet("live", "1") === "1";
+  $("sessCard").open = localGet("sessOpen", "0") === "1";
+  syncControls(); setSub(localGet("sub", "img"));
+  try {
+    await refreshState();
+    // Chỉ quay lại dashboard nếu trong phiên server này bạn ĐÃ mở nguồn (upload / Mongo); nếu không -> màn hình bắt đầu
+    if (S.sources.length) {
+      const last = localGet("src", ""); S.src = S.sources.some(s => s.id === last) ? last : S.sources.at(-1).id;
+      showDash(); busy(t("Đang tải…")); try { await loadSession(); } finally { busy(); }
+    } else showStart();
+  } catch (ex) { showStart(); $("mMsg").innerHTML = `<div class="msg err">${t("Lỗi: ")}${esc(ex.message)}</div>`; }
+})();
+</script>
+<script src="/static/compare.js"></script>
+<script src="/static/paper.js"></script>
+<script src="/static/unsup.js"></script>
+<script src="/static/ml.js"></script>
+<script src="/static/sex.js"></script>
+<script src="/static/shape.js"></script>
+<script src="/static/status.js"></script>
+</body>
+</html>

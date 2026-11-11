@@ -1,0 +1,67 @@
+[
+ {
+  "date": "2026-11-03",
+  "vi": "Mô phỏng bài báo: ΔS và R vẽ được từng trứng (mặc định) hoặc trung bình nhóm.",
+  "en": "Paper reproduction: ΔS and R can be drawn per egg (default) or as group means."
+ },
+ {
+  "date": "2026-11-03",
+  "vi": "Mô phỏng bài báo chuyển vào cuối tab So sánh (dùng chung đầu đo); tab Phân tích còn 3 câu hỏi.",
+  "en": "The paper reproduction moved to the bottom of the Compare tab (shares the probe end); the Analysis tab now has 3 questions."
+ },
+ {
+  "date": "2026-11-03",
+  "vi": "Tab Bài báo: chọn Tất cả trứng / Chỉ trứng đã nở (áp dụng cho mọi hình và sàng lọc SVM). Tab So sánh: nút Đã nở để chỉ chọn trứng đã nở. Danh sách lấy từ tab Tình trạng.",
+  "en": "Paper view: choose All eggs / Hatched eggs only (applies to every figure and the SVM screening). Compare tab: Hatched button selects only hatched eggs. The list comes from the Status tab."
+ },
+ {
+  "date": "2026-11-03",
+  "vi": "Đơn giản hoá: gộp Phân cụm, Học máy, Trứng nở · Trống/Mái và Bài báo thành một tab Phân tích, chọn theo câu hỏi; tab Trứng nở chỉ hiện kết luận, đồ thị so với ngẫu nhiên và bảng trứng, phần kỹ thuật thu gọn. Không bỏ tính năng nào.",
+  "en": "Simplified: Clustering, Machine learning, Hatched · Male/Female and Paper merged into one Analysis tab, chosen by question; the Hatched view shows only the verdict, the chance comparison and the egg table, with technical parts collapsed. No features removed."
+ },
+ {
+  "date": "2026-11-03",
+  "vi": "Tab Trứng nở · Trống/Mái: kiểm tra các trứng đã nở có tự tách thành 2 nhóm theo phổ không (99 cấu hình, chia đôi tối ưu, kiểm định kiểu SigClust, đồng thuận, kiểm tra độ sáng vỏ); đối chiếu khi đã gán giới tính.",
+  "en": "Hatched · Male/Female tab: tests whether hatched eggs split into 2 spectral groups (99 configurations, optimal bipartition, SigClust-style test, consensus, shell-brightness check); compares with sex labels once assigned."
+ },
+ {
+  "date": "2026-10-19",
+  "vi": "Tab Tình trạng: thêm thư viện pattern phổ (dashboard/patterns.json) với dấu hiệu nhận biết và tự dò trứng khớp; pattern đầu tiên: hấp thụ đỏ tăng mạnh (trứng 29 / 30), kèm pattern phổ jump.",
+  "en": "Status tab: spectral pattern library (dashboard/patterns.json) with recognition signs and automatic matching; first pattern: strong red absorption (eggs 29 / 30), plus the jump-spectrum pattern."
+ },
+ {
+  "date": "2026-10-19",
+  "vi": "Làm mới giao diện tab Tình trạng: thẻ số liệu bấm để lọc, ô trứng tô màu theo tình trạng, nút chọn tình trạng, kết luận tín hiệu phổ bằng lời và vùng ngưỡng trên đồ thị.",
+  "en": "Refreshed Status tab: clickable summary cards to filter, status-coloured egg tiles, status buttons, plain-language spectral verdict and shaded threshold zones."
+ },
+ {
+  "date": "2026-10-19",
+  "vi": "Sửa lỗi tab Tình trạng: lựa chọn của trứng trước bị giữ lại khi chuyển sang trứng khác; form giờ tự đặt lại.",
+  "en": "Fixed Status tab: the previous egg's selection carried over when switching eggs; the form now resets."
+ },
+ {
+  "date": "2026-10-19",
+  "vi": "Thêm tab Tình trạng: nhật ký tình trạng từng trứng (ngày, ghi chú, ảnh) và cờ tín hiệu phổ tự động; hiển thị thời điểm cập nhật dashboard.",
+  "en": "New Status tab: per-egg status log (date, note, photo) with automatic spectral flags; dashboard update time shown in the header."
+ },
+ {
+  "date": "2026-10-19",
+  "vi": "ID trứng = egg_label 0–30 (số viết trên vỏ); tên file B04–B09 đã đồng bộ.",
+  "en": "Egg ID = egg_label 0–30 (number written on the shell); B04–B09 file names synchronised."
+ },
+ {
+  "date": "2026-10-15",
+  "vi": "Tab Hình dạng trứng; giao diện 4 ngôn ngữ (VI/EN/繁體/简体).",
+  "en": "Egg shape tab; UI in 4 languages (VI/EN/繁體/简体)."
+ },
+ {
+  "date": "2026-10-14",
+  "vi": "Đơn giản hoá giao diện; đổi tên tab Phân cụm.",
+  "en": "Simplified UI; renamed the Clustering tab."
+ },
+ {
+  "date": "2026-10-13",
+  "vi": "Tab Học máy, theo dõi độ ổn định cụm, chạy thường trực trong LAN.",
+  "en": "Machine-learning tab, cluster-stability tracking, always-on LAN service."
+ }
+]

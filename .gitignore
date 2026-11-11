@@ -1,0 +1,10 @@
+# Repo public: chỉ chứa dashboard/ (+ license)
+/*
+!/.gitignore
+!/license.md
+!/dashboard/
+
+**/__pycache__/
+*.py[cod]
+.env
+.env.*
